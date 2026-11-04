@@ -272,8 +272,26 @@ function canvasPos(e) {
   const r = canvas.getBoundingClientRect();
   return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
 }
+function tryFullscreen() {
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if (req) {
+    try {
+      const p = req.call(el);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  }
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      const p = screen.orientation.lock('landscape');
+      if (p && p.catch) p.catch(() => {});
+    }
+  } catch (e) {}
+}
+
 canvas.addEventListener('pointerdown', (e) => {
   audioInit();
+  tryFullscreen();
   const p = canvasPos(e);
   if (G.mode === 'play' && G.paused && !G.talent && !G.upgrade) {
     for (let i = 0; i < 4; i++) {
@@ -3601,6 +3619,7 @@ function drawTitle() {
     g.restore();
   });
 
+  if (IS_TOUCH) text('iPhone：分享 → 添加到主屏幕，可全屏', 150, 706, { size: 10, color: 'rgba(200,212,238,0.45)', spacing: 2 });
   if (G.best > 0) text('BEST  ' + String(G.best).padStart(7, '0'), 150, 640, { size: 10, color: 'rgba(200,212,238,0.5)', spacing: 3 });
   const pulse = 0.72 + Math.sin(t * 3.2) * 0.28;
   g.save();
