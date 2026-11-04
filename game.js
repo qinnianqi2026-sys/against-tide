@@ -5,7 +5,7 @@
 (() => {
 'use strict';
 
-const W = 1280, H = 720;
+let W = 1280, H = 720;
 const WORLD_W = 2600;
 const ARENA = { x1: 80, x2: WORLD_W - 80, y1: 380, y2: 690 };
 const CAM = { x: 640, y: 360 };
@@ -19,6 +19,19 @@ const g = canvas.getContext('2d');
 const DPR = Math.min(1.25, window.devicePixelRatio || 1);
 canvas.width = W * DPR;
 canvas.height = H * DPR;
+function resizeCanvas() {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const aspect = vw / Math.max(1, vh);
+  W = Math.round(Math.max(1280, Math.min(1760, 720 * aspect)));
+  H = 720;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width = '100vw';
+  canvas.style.height = '100vh';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 120));
 
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -2129,7 +2142,7 @@ function update(dt) {
   if (G.ult) { updateUlt(dt); return; }
 
   G.runT += dt;
-  CAM.x = lerp(CAM.x, clamp(P.x, 640, WORLD_W - 640), 1 - Math.exp(-5 * dt));
+  CAM.x = lerp(CAM.x, clamp(P.x, W / 2, WORLD_W - W / 2), 1 - Math.exp(-5 * dt));
   CAM.y = 360;
   G.hitstop = Math.max(0, G.hitstop - dt);
   G.slowT = Math.max(0, G.slowT - dt);
@@ -2285,7 +2298,7 @@ function startGame() {
   G.bloodMoon = false; G.ult = null; G.banner = null; G.timeScale = 1;
   G.spawnT = 0.4; G.endT = 0; G.streak = 0;
   P.maxHp = 10;
-  P.x = 640; P.y = 580; P.hp = P.maxHp; P.aim = Math.PI; P.face = 1;
+  P.x = W / 2; P.y = 580; CAM.x = W / 2; P.hp = P.maxHp; P.aim = Math.PI; P.face = 1;
   P.attackT = 0; P.dashT = 0; P.dashCd = 0; P.invuln = 1.0; P.hurtT = 0;
   P.dmgBonus = 0; P.speedMul = 1; P.rangeMul = 1; P.dashCdMul = 1; P.ultGainMul = 1;
   P.hasWave = false; P.hasChain = false; P.hasBurn = false; P.hasFrost = false; P.lifesteal = 0; P.chainCd = 0;
@@ -2924,7 +2937,7 @@ function render() {
     const bx = (W - bw) / 2, by = H - bh;
     if (duskScene) {
       g.drawImage(bgD, bx, by, bw, bh);
-      g.drawImage(overlayDusk, 0, 0);
+      g.drawImage(overlayDusk, 0, 0, W, H);
     } else {
       g.drawImage(bgN, bx, by, bw, bh);
       if (G.redMix > 0.001) {
@@ -2933,7 +2946,7 @@ function render() {
         g.drawImage(bgR, bx, by, bw, bh);
         g.restore();
       }
-      g.drawImage(overlayCanvas, 0, 0);
+      g.drawImage(overlayCanvas, 0, 0, W, H);
     }
   } else {
     g.drawImage(bg, 0, 0);
@@ -3159,7 +3172,7 @@ function render() {
   }
 
   // 暗角
-  g.drawImage(vignetteCanvas, 0, 0);
+  g.drawImage(vignetteCanvas, 0, 0, W, H);
   if (G.mode === 'play' && P.hp <= 3) {
     const a = 0.10 + Math.sin(G.t * 4) * 0.05;
     g.fillStyle = `rgba(120,0,12,${a})`;

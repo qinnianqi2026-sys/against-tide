@@ -17,8 +17,8 @@ html, body {
 
 canvas {
   display: block;
-  width: min(100vw, 177.78vh);
-  height: min(56.25vw, 100vh);
+  width: 100vw;
+  height: 100vh;
   box-shadow: 0 0 120px rgba(110, 90, 255, 0.12), 0 0 4px rgba(0, 0, 0, 0.9);
   cursor: crosshair;
   touch-action: none;
