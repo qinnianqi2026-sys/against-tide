@@ -1,0 +1,44 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#wrap {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 42%, #14101f 0%, #07060b 55%, #000 100%);
+}
+
+canvas {
+  display: block;
+  width: min(100vw, 177.78vh);
+  height: min(56.25vw, 100vh);
+  box-shadow: 0 0 120px rgba(110, 90, 255, 0.12), 0 0 4px rgba(0, 0, 0, 0.9);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+#fallback {
+  display: none;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, 86vw);
+  padding: 24px 26px;
+  border: 1px solid rgba(255, 90, 110, 0.35);
+  background: rgba(12, 10, 18, 0.94);
+  color: #e8ecf6;
+  font: 14px/1.7 "PingFang SC", "Hiragino Sans GB", sans-serif;
+  border-radius: 10px;
+  z-index: 10;
+}
+#fallback b { color: #ff6b7a; letter-spacing: 2px; }
+#fallback #errmsg { margin: 8px 0; color: #ffb3bc; word-break: break-all; }
+#fallback p { margin: 6px 0 0; color: rgba(200, 210, 235, 0.65); }
