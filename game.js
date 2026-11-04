@@ -178,7 +178,7 @@ const SFX = {
 
 /* ---------------- 状态 ---------------- */
 const G = {
-  mode: 'title', paused: false, upgrade: null, cutin: null, taken: new Set(), eliteDone: false, elite2Done: false,
+  mode: 'title', paused: false, upgrade: null, cutin: null, taken: new Set(), eliteDone: false, elite2Done: false, execT: 0, execX: 0, execY: 0,
   t: 0, runT: 0, stage: 1, stageKills: 0, stageQuota: 0, stageClearT: 0, victory: false, score: 0, kills: 0,
   combo: 0, comboT: 0, maxCombo: 0,
   meter: 0,
@@ -940,7 +940,7 @@ function drawBladeTrail() {
 }
 
 function drawRig() {
-  const s = 0.94 * depth(P.y);
+  const s = 1.04 * depth(P.y);
   const t = P.animT;
   const run = P.run ? 1 : 0;
   const ph = P.runPhase;
@@ -1031,6 +1031,16 @@ function drawRig() {
   g.save();
   g.translate(P.x, P.y);
   g.scale(P.face * s, s);
+  if (P.dashT > 0) {
+    for (let i = 1; i <= 3; i++) {
+      g.globalAlpha = 0.16 * (1 - i * 0.24);
+      g.fillStyle = '#bfe8ff';
+      g.beginPath();
+      g.ellipse(-P.face * i * 20, -92, 9, 62, 0.18 * P.face, 0, TAU);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+  }
 
   // 围巾（身后）
   g.fillStyle = '#b02a3c';
@@ -1514,6 +1524,14 @@ function killEnemy(e, ang, noExplode) {
     e.z = 1;
   }
   G.kills++;
+  if (G.kills % 20 === 0) {
+    G.execT = 0.6;
+    G.execX = e.x;
+    G.execY = e.y;
+    G.hitstop = Math.max(G.hitstop, 0.09);
+    addFlash('#ffffff', 0.25);
+    addShake(14);
+  }
   G.combo += 2;
   G.comboT = 3.0;
   G.maxCombo = Math.max(G.maxCombo, G.combo);
@@ -2121,6 +2139,7 @@ function update(dt) {
   G.kickX -= G.kickX * Math.min(1, 12 * dt);
   G.kickY -= G.kickY * Math.min(1, 12 * dt);
   updateFX(dt);
+  if (G.execT > 0) G.execT = Math.max(0, G.execT - dt);
   updateWaves(dt);
   updateWeather(dt);
   G.redMix = lerp(G.redMix, (G.bloodMoon && G.mode !== 'title') ? 1 : 0, 1 - Math.exp(-1.6 * dt));
@@ -2260,6 +2279,10 @@ function updateUlt(dt) {
       });
     }
     addShake(26);
+    G.execT = 0.65;
+    G.execX = P.x;
+    G.execY = P.y - 90;
+    addFlash('#ffffff', 0.4);
   }
   if (u.t > u.dur) {
     G.ult = null;
@@ -3151,6 +3174,7 @@ function render() {
     g.restore();
   }
 
+  drawExec();
   g.restore();
   drawWeather();
 
@@ -3227,6 +3251,34 @@ function drawWeather() {
 }
 
 /* ---------------- HUD ---------------- */
+function drawExec() {
+  if (G.execT <= 0) return;
+  const k = 1 - G.execT / 0.6;
+  const a = Math.min(1, G.execT * 6) * (1 - k * 0.8);
+  g.save();
+  g.globalAlpha = a;
+  g.translate(G.execX, G.execY - 40 - k * 40);
+  const sc = 1 + k * 0.35;
+  g.scale(sc, sc);
+  g.textAlign = 'center';
+  g.font = `700 96px ${F_SERIF}`;
+  g.fillStyle = '#ffffff';
+  g.shadowColor = '#ff2b44';
+  g.shadowBlur = 34;
+  g.fillText('斩', 0, 0);
+  g.shadowBlur = 0;
+  g.strokeStyle = 'rgba(255,90,110,0.55)';
+  g.lineWidth = 2;
+  for (let i = 0; i < 8; i++) {
+    const ang = i / 8 * TAU + k * 0.4;
+    g.beginPath();
+    g.moveTo(Math.cos(ang) * 60, Math.sin(ang) * 60);
+    g.lineTo(Math.cos(ang) * (90 + k * 40), Math.sin(ang) * (90 + k * 40));
+    g.stroke();
+  }
+  g.restore();
+}
+
 function drawTouchUI() {
   g.save();
   const jx = joy.active ? joy.ox : 150, jy = joy.active ? joy.oy : H - 150;
