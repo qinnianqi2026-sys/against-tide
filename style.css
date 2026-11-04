@@ -42,3 +42,74 @@ canvas {
 #fallback b { color: #ff6b7a; letter-spacing: 2px; }
 #fallback #errmsg { margin: 8px 0; color: #ffb3bc; word-break: break-all; }
 #fallback p { margin: 6px 0 0; color: rgba(200, 210, 235, 0.65); }
+
+
+/* 竖屏引导 */
+#rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: radial-gradient(circle at 50% 40%, #171122 0%, #07060b 70%);
+  color: #eef2fb;
+  font-family: "PingFang SC", "Hiragino Sans GB", sans-serif;
+  text-align: center;
+  padding: 24px;
+}
+@media (orientation: portrait) {
+  #rotate { display: flex; }
+}
+.rot-phone {
+  width: 74px;
+  height: 128px;
+  border: 2px solid rgba(255,255,255,0.7);
+  border-radius: 14px;
+  position: relative;
+  animation: rot 2.4s ease-in-out infinite;
+}
+.rot-phone::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 26px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.5);
+  transform: translateX(-50%);
+}
+@keyframes rot {
+  0%, 30% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(90deg); }
+}
+.rot-title {
+  font-size: 24px;
+  letter-spacing: 8px;
+  font-weight: 700;
+}
+.rot-sub {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: rgba(220,230,250,0.6);
+}
+#rot-btn {
+  margin-top: 10px;
+  padding: 12px 26px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,120,140,0.7);
+  background: rgba(255,90,110,0.16);
+  color: #ffe8eb;
+  font-size: 14px;
+  letter-spacing: 3px;
+  font-family: inherit;
+}
+.rot-tip {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(200,210,235,0.4);
+}

@@ -3914,6 +3914,18 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
+const rotBtn = document.getElementById('rot-btn');
+if (rotBtn) {
+  rotBtn.addEventListener('click', async () => {
+    try {
+      if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+    } catch (e) {}
+    try {
+      if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+    } catch (e) {}
+  });
+}
+
 const qs = new URLSearchParams(location.search);
 if (qs.get('skip') === '1') setTimeout(() => startGame(), 80);
 
