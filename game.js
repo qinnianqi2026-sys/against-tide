@@ -1474,7 +1474,7 @@ function hitEnemy(e, dmg, ang, launch, noChain, noExplode) {
   G.combo++;
   G.comboT = 3.0;
   G.maxCombo = Math.max(G.maxCombo, G.combo);
-  G.meter = Math.min(100, G.meter + 1.4 * P.ultGainMul);
+  G.meter = Math.min(100, G.meter + 0.9 * P.ultGainMul);
   G.score += Math.round(6 * mult());
   sparks(e.x, e.y - 46 * e.scale, 9, '#ffffff', 320, ang, 1.5);
   sparks(e.x, e.y - 46 * e.scale, 5, '#ff6a78', 220, ang, 1.1);
@@ -1517,7 +1517,7 @@ function killEnemy(e, ang, noExplode) {
   G.combo += 2;
   G.comboT = 3.0;
   G.maxCombo = Math.max(G.maxCombo, G.combo);
-  if (!G.ult) G.meter = Math.min(100, G.meter + 6 * P.ultGainMul);
+  if (!G.ult) G.meter = Math.min(100, G.meter + 4 * P.ultGainMul);
   G.score += Math.round(100 * mult());
   if (e.kind === 'oni') {
     petals(e.x, e.y - 90, 60, '#ff4d63', 420);
@@ -2235,8 +2235,15 @@ function updateUlt(dt) {
           floatText(String(dmg), e.x, e.y - 150, '#ffd36e', 28);
           ring(e.x, e.y - 60, 20, 120, '#ffd36e', 3, 0.4);
         }
-      } else {
-        killEnemy(e);
+      } else if (Math.hypot(e.x - P.x, e.y - P.y) < 700) {
+        const ang = Math.atan2(e.y - P.y, e.x - P.x);
+        e.hp -= 3;
+        e.hitFlash = 1;
+        e.kx += Math.cos(ang) * 420;
+        e.ky += Math.sin(ang) * 260;
+        e.stun = Math.max(e.stun || 0, 0.35);
+        floatText('3', e.x + rnd(-8, 8), e.y - 70, '#ffe8eb', 16);
+        if (e.hp <= 0) killEnemy(e, ang);
       }
     }
     if (list.length) {
