@@ -165,7 +165,7 @@ const SFX = {
 
 /* ---------------- 状态 ---------------- */
 const G = {
-  mode: 'title', paused: false, upgrade: null, cutin: null, taken: new Set(), eliteDone: false,
+  mode: 'title', paused: false, upgrade: null, cutin: null, taken: new Set(), eliteDone: false, elite2Done: false,
   t: 0, runT: 0, stage: 1, stageKills: 0, stageQuota: 0, stageClearT: 0, victory: false, score: 0, kills: 0,
   combo: 0, comboT: 0, maxCombo: 0,
   meter: 0,
@@ -246,10 +246,10 @@ const IS_TOUCH = new URLSearchParams(location.search).get('touch') === '1' ||
   (window.matchMedia && matchMedia('(pointer: coarse)').matches);
 const joy = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0, kx: 0, ky: 0 };
 const TBTN = [
-  { id: 'atk', x: W - 96, y: H - 116, r: 48, label: '斩' },
-  { id: 'dash', x: W - 196, y: H - 78, r: 32, label: '闪' },
-  { id: 'ult', x: W - 200, y: H - 166, r: 30, label: '名册' },
-  { id: 'pause', x: W - 38, y: 38, r: 18, label: '' }
+  { id: 'atk', x: W - 112, y: H - 138, r: 74, label: '斩' },
+  { id: 'dash', x: W - 246, y: H - 86, r: 50, label: '闪' },
+  { id: 'ult', x: W - 252, y: H - 212, r: 48, label: '名册' },
+  { id: 'pause', x: W - 40, y: 34, r: 22, label: '' }
 ];
 function togglePause() {
   if (G.mode !== 'play' || G.upgrade || G.talent) return;
@@ -303,11 +303,11 @@ canvas.addEventListener('pointermove', (e) => {
   const p = canvasPos(e);
   const dx = p.x - joy.ox, dy = p.y - joy.oy;
   const d = Math.hypot(dx, dy) || 1;
-  const cl = Math.min(1, d / 56);
+  const cl = Math.min(1, d / 78);
   joy.x = dx / d * cl;
   joy.y = dy / d * cl;
-  joy.kx = dx / d * Math.min(d, 56);
-  joy.ky = dy / d * Math.min(d, 56);
+  joy.kx = dx / d * Math.min(d, 78);
+  joy.ky = dy / d * Math.min(d, 78);
 });
 function endTouch(e) {
   if (joy.active && e.pointerId === joy.id) {
@@ -1609,7 +1609,7 @@ const KINDS = {
   shield: { hp: 4, speed: 46, r: 20, scale: 1.08, dmg: 1, body: '#1c1a26', eye: '#ffd36e' },
   archer: { hp: 1, speed: 64, r: 13, scale: 0.92, dmg: 1, body: '#151b24', eye: '#8fe3ff' },
   bomber: { hp: 1, speed: 118, r: 15, scale: 0.88, dmg: 2, body: '#1d1419', eye: '#ff8a5a' },
-  oni:    { hp: 150, speed: 62, r: 40, scale: 1.75, dmg: 2, body: '#120d16', eye: '#ff3b4e' }
+  oni:    { hp: 240, speed: 62, r: 40, scale: 1.75, dmg: 2, body: '#120d16', eye: '#ff3b4e' }
 };
 
 function spawnEnemy(kind, fx, fy) {
@@ -1956,12 +1956,12 @@ function updateEnemies(dt) {
 /* ---------------- 更新 ---------------- */
 const BOSS_STAGE = 4;
 const STAGES = [
-  { title: '第 一 阵 · 足 轻', quota: 28, eliteAt: 14, pool: ['grunt', 'grunt', 'crawler', 'shield'],
-    elite: ['shield', 'shield', 'archer', 'archer', 'archer', 'archer'] },
-  { title: '第 二 阵 · 弓 火', quota: 38, eliteAt: 19, pool: ['grunt', 'crawler', 'archer', 'bomber', 'shield', 'archer'],
-    elite: ['bomber', 'bomber', 'bomber', 'archer', 'archer', 'shield'] },
-  { title: '第 三 阵 · 黄 泉', quota: 38, eliteAt: 19, pool: ['crawler', 'archer', 'bomber', 'shield', 'grunt', 'bomber'],
-    elite: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'archer'] },
+  { title: '第 一 阵 · 足 轻', quota: 44, eliteAt: 18, pool: ['grunt', 'grunt', 'crawler', 'shield'],
+    elite: ['shield', 'shield', 'archer', 'archer', 'archer', 'archer'], eliteAt2: 34, elite2: ['bomber', 'bomber', 'archer', 'archer', 'shield', 'grunt', 'grunt'] },
+  { title: '第 二 阵 · 弓 火', quota: 60, eliteAt: 26, pool: ['grunt', 'crawler', 'archer', 'bomber', 'shield', 'archer'],
+    elite: ['bomber', 'bomber', 'bomber', 'archer', 'archer', 'shield'], eliteAt2: 40, elite2: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'grunt', 'grunt'] },
+  { title: '第 三 阵 · 黄 泉', quota: 60, eliteAt: 26, pool: ['crawler', 'archer', 'bomber', 'shield', 'grunt', 'bomber'],
+    elite: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'archer'], eliteAt2: 46, elite2: ['shield', 'shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'grunt'] },
   { title: '第 四 阵 · 鬼 武 者', boss: true }
 ];
 
@@ -2040,6 +2040,7 @@ function startStage(n, keep) {
   G.stageKills = 0;
   G.stageClearT = 0;
   G.eliteDone = false;
+  G.elite2Done = false;
   G.spawnT = 0.5;
   projectiles.length = 0;
   if (!keep) enemies.length = 0;
@@ -2079,6 +2080,14 @@ function updateStage(dt) {
     if (G.stageClearT > 0.9 && !G.upgrade) {
       offerUpgrade(G.stage + 1);
     }
+  }
+  if (!G.elite2Done && st.elite2 && G.stageKills >= st.eliteAt2) {
+    G.elite2Done = true;
+    for (const k of st.elite2) spawnEnemy(k, clamp(P.x + rnd(-560, 560), ARENA.x1 + 60, ARENA.x2 - 60), clamp(P.y + rnd(-130, 130), ARENA.y1, ARENA.y2));
+    G.banner = { title: '强 敌 来 袭', sub: '斩 杀 首 级', t: 0, dur: 1.6 };
+    addFlash('#ff3b4e', 0.22);
+    addShake(12);
+    SFX.roar();
   }
   if (!G.eliteDone && st.elite && G.stageKills >= st.eliteAt) {
     G.eliteDone = true;
@@ -2933,6 +2942,11 @@ function render() {
   // ---- 相机：世界坐标 ----
   g.save();
   g.translate(W / 2 - CAM.x, H / 2 - CAM.y);
+  if (IS_TOUCH) {
+    g.translate(P.x, P.y);
+    g.scale(1.12, 1.12);
+    g.translate(-P.x, -P.y);
+  }
   if (G.punch > 0.001) {
     const pz = 1 + G.punch * 0.05;
     g.translate(P.x, P.y);
@@ -3195,17 +3209,17 @@ function drawWeather() {
 /* ---------------- HUD ---------------- */
 function drawTouchUI() {
   g.save();
-  const jx = joy.active ? joy.ox : 120, jy = joy.active ? joy.oy : H - 120;
-  const baseR = 58;
+  const jx = joy.active ? joy.ox : 150, jy = joy.active ? joy.oy : H - 150;
+  const baseR = 82;
   g.globalAlpha = joy.active ? 0.9 : 0.32;
   g.fillStyle = 'rgba(10,14,24,0.55)';
   g.beginPath(); g.arc(jx, jy, baseR, 0, TAU); g.fill();
-  g.strokeStyle = 'rgba(160,200,255,0.4)';
+  g.strokeStyle = 'rgba(160,200,255,0.45)';
   g.lineWidth = 1.5;
   g.beginPath(); g.arc(jx, jy, baseR, 0, TAU); g.stroke();
   const kx = joy.active ? jx + joy.kx : jx, ky = joy.active ? jy + joy.ky : jy;
   g.fillStyle = joy.active ? 'rgba(220,240,255,0.7)' : 'rgba(220,240,255,0.3)';
-  g.beginPath(); g.arc(kx, ky, 24, 0, TAU); g.fill();
+  g.beginPath(); g.arc(kx, ky, 36, 0, TAU); g.fill();
   g.globalAlpha = 1;
   for (const b of TBTN) {
     if (b.id === 'pause') {
@@ -3224,7 +3238,7 @@ function drawTouchUI() {
     g.lineWidth = ready ? 2.5 : 1.5;
     g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.stroke();
     g.fillStyle = ready ? '#ffd36e' : 'rgba(230,240,255,0.85)';
-    g.font = `700 ${b.id === 'atk' ? 22 : 13}px ${F_SERIF}`;
+    g.font = `700 ${b.id === 'atk' ? 34 : 19}px ${F_SERIF}`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.fillText(b.label, b.x, b.y + 1);
@@ -3277,9 +3291,12 @@ function drawHUD() {
   // 分数
   g.save();
   g.textAlign = 'right';
-  text('SCORE', W - 54, 46, { size: 10, color: 'rgba(160,180,215,0.55)', align: 'right', spacing: 4 });
-  text(String(G.score).padStart(7, '0'), W - 54, 80, { size: 28, family: F_NUM, weight: 700, color: '#eef2fb', align: 'right' });
-  text(`BEST ${String(G.best).padStart(7, '0')}`, W - 54, 102, { size: 9, color: 'rgba(160,180,215,0.35)', align: 'right', spacing: 2 });
+  const sy = IS_TOUCH ? 30 : 0;
+  text('SCORE', W - 54, 46 + sy, { size: 10, color: 'rgba(160,180,215,0.55)', align: 'right', spacing: 4 });
+  text(String(G.score).padStart(7, '0'), W - 54, 80 + sy, { size: 28, family: F_NUM, weight: 700, color: '#eef2fb', align: 'right' });
+  text(`BEST ${String(G.best).padStart(7, '0')}`, W - 54, 102 + sy, { size: 9, color: 'rgba(160,180,215,0.35)', align: 'right', spacing: 2 });
+  const tm = Math.floor(G.runT / 60), ts = Math.floor(G.runT % 60);
+  text(`${tm}:${String(ts).padStart(2, '0')}`, W - 54, 124 + sy, { size: 12, family: F_NUM, color: 'rgba(200,215,240,0.55)', align: 'right', spacing: 2 });
   g.restore();
 
   // 连击 + 评级
@@ -3289,7 +3306,7 @@ function drawHUD() {
     const pulse = 1 + Math.min(0.25, G.combo / 900);
     g.save();
     g.textAlign = 'right';
-    g.translate(W - 54, 168);
+    g.translate(W - 54, 168 + (IS_TOUCH ? 30 : 0));
     g.scale(pulse, pulse);
     text(String(G.combo), 0, 0, { size: 44, family: F_NUM, weight: 700, color: col, align: 'right', glow: 16 });
     text('H I T S', -4, 22, { size: 11, color: 'rgba(230,240,255,0.7)', align: 'right', spacing: 3 });
