@@ -1333,6 +1333,18 @@ function drawCutoutPlayer() {
     head = Math.sin(t * 1.1) * 0.01;
   }
 
+  // 刀尖世界坐标 → 拖尾
+  const shx = CUTP.armL[0], shy = CUTP.armL[1];
+  const tipx = shx + Math.cos(armL) * (-580) - Math.sin(armL) * 120;
+  const tipy = shy + Math.sin(armL) * (-580) + Math.cos(armL) * 120;
+  for (const q of P.trail) q.life -= 0.016;
+  if (P.trail.length > 22) P.trail.shift();
+  P.trail = P.trail.filter(q => q.life > 0);
+  if (swinging) {
+    P.trail.push({ x: P.x + P.face * s * tipx, y: P.y + bob + s * tipy, life: 0.2 });
+  }
+  if (P.trail.length > 1) drawBladeTrail();
+
   g.save();
   g.translate(P.x, P.y + bob);
   g.scale(P.face * s, s);
@@ -2206,6 +2218,7 @@ function startStage(n, keep) {
   G.eliteDone = false;
   G.elite2Done = false;
   G.spawnT = 0.5;
+  G.formT = 7;
   projectiles.length = 0;
   if (!keep) enemies.length = 0;
   const st = STAGES[n - 1];
@@ -2238,6 +2251,15 @@ function updateStage(dt) {
       G.spawnT = 0.55 - G.stage * 0.08;
       spawnEnemy(st.pool[Math.floor(Math.random() * st.pool.length)]);
       if (Math.random() < 0.3) spawnEnemy(st.pool[Math.floor(Math.random() * st.pool.length)]);
+    }
+    G.formT -= dt;
+    if (G.formT <= 0 && alive < 22) {
+      G.formT = 11 - G.stage;
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      const bx = clamp(P.x + dir * 520, ARENA.x1 + 60, ARENA.x2 - 60);
+      for (let i = 0; i < 3; i++) spawnEnemy('shield', clamp(bx + i * 52, ARENA.x1, ARENA.x2), clamp(P.y - 26 + i * 14, ARENA.y1, ARENA.y2));
+      for (let i = 0; i < 2; i++) spawnEnemy('archer', clamp(bx + 80 + i * 46, ARENA.x1, ARENA.x2), clamp(P.y - 90 - i * 16, ARENA.y1, ARENA.y2));
+      G.banner = { title: '盾 阵 推 进', sub: '绕 后 破 阵', t: 0, dur: 1.2 };
     }
   } else {
     G.stageClearT += dt;
