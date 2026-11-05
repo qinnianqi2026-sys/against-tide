@@ -581,49 +581,69 @@ function drawTorii(b, x, y, s, col) {
 
 buildBG();
 
-// 黄昏暖色地面
+// 可滚动的地面
+const groundCanvas = document.createElement('canvas');
+groundCanvas.width = WORLD_W; groundCanvas.height = 390;
+{
+  const b = groundCanvas.getContext('2d');
+  const grad = b.createLinearGradient(0, 0, 0, 390);
+  grad.addColorStop(0, '#343c50');
+  grad.addColorStop(0.5, '#232a3b');
+  grad.addColorStop(1, '#141926');
+  b.fillStyle = grad;
+  b.fillRect(0, 0, WORLD_W, 390);
+  for (let row = 0; row < 17; row++) {
+    const y = row * 24, off = (row % 2) * 24;
+    for (let x = -48; x < WORLD_W; x += 48) {
+      const px = x + off;
+      b.fillStyle = `rgba(190,210,240,${0.03 + Math.random() * 0.04})`;
+      b.fillRect(px + 1, y + 1, 46, 22);
+      b.strokeStyle = `rgba(10,14,22,${0.35 + Math.random() * 0.2})`;
+      b.lineWidth = 1;
+      b.strokeRect(px + 0.5, y + 0.5, 47, 23);
+    }
+  }
+  for (let i = 0; i < 140; i++) {
+    b.fillStyle = `rgba(150,165,195,${0.05 + Math.random() * 0.08})`;
+    b.fillRect(Math.random() * WORLD_W, Math.random() * 390, 1 + Math.random() * 2, 1);
+  }
+  const fog = b.createLinearGradient(0, 0, 0, 90);
+  fog.addColorStop(0, 'rgba(8,10,18,1)');
+  fog.addColorStop(0.5, 'rgba(9,11,20,0.7)');
+  fog.addColorStop(1, 'rgba(9,11,20,0)');
+  b.fillStyle = fog;
+  b.fillRect(0, 0, WORLD_W, 90);
+}
+
 const groundDusk = document.createElement('canvas');
 groundDusk.width = WORLD_W; groundDusk.height = 390;
 {
   const b = groundDusk.getContext('2d');
   const grad = b.createLinearGradient(0, 0, 0, 390);
-  grad.addColorStop(0, '#6b5242');
-  grad.addColorStop(0.45, '#4a362c');
-  grad.addColorStop(1, '#2a1e19');
+  grad.addColorStop(0, '#6a5142');
+  grad.addColorStop(0.5, '#45332a');
+  grad.addColorStop(1, '#241a16');
   b.fillStyle = grad;
   b.fillRect(0, 0, WORLD_W, 390);
-  for (let row = 0; row < 12; row++) {
-    const y = row * 34;
-    const off = row % 2 ? 48 : 0;
-    for (let x = -96; x < WORLD_W; x += 96) {
+  for (let row = 0; row < 17; row++) {
+    const y = row * 24, off = (row % 2) * 24;
+    for (let x = -48; x < WORLD_W; x += 48) {
       const px = x + off;
-      b.strokeStyle = `rgba(255,210,170,${0.04 + Math.random() * 0.05})`;
+      b.fillStyle = `rgba(255,220,180,${0.03 + Math.random() * 0.04})`;
+      b.fillRect(px + 1, y + 1, 46, 22);
+      b.strokeStyle = `rgba(20,12,10,${0.35 + Math.random() * 0.2})`;
       b.lineWidth = 1;
-      b.strokeRect(px, y, 96, 34);
-      b.fillStyle = `rgba(255,220,180,${Math.random() * 0.03})`;
-      b.fillRect(px + 2, y + 2, 92, 3);
+      b.strokeRect(px + 0.5, y + 0.5, 47, 23);
     }
   }
-  b.strokeStyle = 'rgba(190,150,120,0.10)';
-  for (let i = 0; i < 90; i++) {
-    let x = Math.random() * WORLD_W, y = Math.random() * 390;
-    b.lineWidth = 0.8;
-    b.beginPath(); b.moveTo(x, y);
-    for (let k = 0; k < 3; k++) { x += rnd(-34, 34); y += rnd(-12, 12); b.lineTo(x, y); }
-    b.stroke();
-  }
-  for (let i = 0; i < 26; i++) {
-    const x = Math.random() * WORLD_W, y = 40 + Math.random() * 330, r = rnd(18, 64);
-    const p = b.createRadialGradient(x, y, 2, x, y, r);
-    p.addColorStop(0, 'rgba(255,190,120,0.16)');
-    p.addColorStop(1, 'rgba(255,190,120,0)');
-    b.fillStyle = p;
-    b.beginPath(); b.ellipse(x, y, r, r * 0.32, 0, 0, TAU); b.fill();
+  for (let i = 0; i < 140; i++) {
+    b.fillStyle = `rgba(255,210,160,${0.04 + Math.random() * 0.06})`;
+    b.fillRect(Math.random() * WORLD_W, Math.random() * 390, 1 + Math.random() * 2, 1);
   }
   const fog = b.createLinearGradient(0, 0, 0, 90);
-  fog.addColorStop(0, 'rgba(28,14,12,0.98)');
-  fog.addColorStop(0.5, 'rgba(36,18,16,0.75)');
-  fog.addColorStop(1, 'rgba(36,18,16,0)');
+  fog.addColorStop(0, 'rgba(32,18,14,0.95)');
+  fog.addColorStop(0.5, 'rgba(38,22,18,0.65)');
+  fog.addColorStop(1, 'rgba(38,22,18,0)');
   b.fillStyle = fog;
   b.fillRect(0, 0, WORLD_W, 90);
 }
@@ -755,58 +775,6 @@ horizonFog.width = W; horizonFog.height = 300;
   f.fillStyle = fg;
   f.fillRect(0, 0, W, 180);
 }
-
-// 可滚动的地面（世界坐标 2600x340）
-const groundCanvas = document.createElement('canvas');
-groundCanvas.width = WORLD_W; groundCanvas.height = 390;
-{
-  const b = groundCanvas.getContext('2d');
-  const grad = b.createLinearGradient(0, 0, 0, 390);
-  grad.addColorStop(0, '#37405a');
-  grad.addColorStop(0.45, '#262e44');
-  grad.addColorStop(1, '#161c2a');
-  b.fillStyle = grad;
-  b.fillRect(0, 0, WORLD_W, 390);
-  // 石板
-  for (let row = 0; row < 12; row++) {
-    const y = row * 34;
-    const off = row % 2 ? 48 : 0;
-    for (let x = -96; x < WORLD_W; x += 96) {
-      const px = x + off;
-      b.strokeStyle = `rgba(170,190,225,${0.04 + Math.random() * 0.05})`;
-      b.lineWidth = 1;
-      b.strokeRect(px, y, 96, 34);
-      b.fillStyle = `rgba(200,220,255,${Math.random() * 0.025})`;
-      b.fillRect(px + 2, y + 2, 92, 3);
-    }
-  }
-  // 裂纹
-  b.strokeStyle = 'rgba(120,135,170,0.10)';
-  for (let i = 0; i < 90; i++) {
-    let x = Math.random() * WORLD_W, y = Math.random() * 340;
-    b.lineWidth = 0.8;
-    b.beginPath(); b.moveTo(x, y);
-    for (let k = 0; k < 3; k++) { x += rnd(-34, 34); y += rnd(-12, 12); b.lineTo(x, y); }
-    b.stroke();
-  }
-  // 月光水洼
-  for (let i = 0; i < 26; i++) {
-    const x = Math.random() * WORLD_W, y = 40 + Math.random() * 280, r = rnd(18, 64);
-    const p = b.createRadialGradient(x, y, 2, x, y, r);
-    p.addColorStop(0, 'rgba(170,200,255,0.10)');
-    p.addColorStop(1, 'rgba(170,200,255,0)');
-    b.fillStyle = p;
-    b.beginPath(); b.ellipse(x, y, r, r * 0.32, 0, 0, TAU); b.fill();
-  }
-  // 顶部融入夜空
-  const fog = b.createLinearGradient(0, 0, 0, 90);
-  fog.addColorStop(0, 'rgba(8,10,18,1)');
-  fog.addColorStop(0.5, 'rgba(9,11,20,0.75)');
-  fog.addColorStop(1, 'rgba(9,11,20,0)');
-  b.fillStyle = fog;
-  b.fillRect(0, 0, WORLD_W, 90);
-}
-
 
 // 预渲染叠加层 / 光环，减少每帧渐变与阴影开销
 const overlayCanvas = document.createElement('canvas');
@@ -1307,88 +1275,201 @@ function drawCutout(aL, aR, lean, bob) {
   return true;
 }
 
-function drawPart(name, angle) {
-  const img = CUT[name], m = CUTM[name];
-  if (!img || !img.complete || !img.naturalWidth) return false;
-  const j = CUTP[name];
-  g.save();
-  g.translate(j[0], j[1]);
-  g.rotate(angle || 0);
-  g.imageSmoothingEnabled = false;
-  g.drawImage(img, -m.px, -m.py);
-  g.imageSmoothingEnabled = true;
-  g.restore();
-  return true;
+const HERO_PIX = document.createElement('canvas');
+HERO_PIX.width = 96; HERO_PIX.height = 120;
+const hp = HERO_PIX.getContext('2d');
+const PXC = {
+  hair: '#0a0c12', hair2: '#1b2030', skin: '#e9d6c0', coat: '#14161f',
+  haori: '#464e60', sash: '#b3202f', wrap: '#d9d2c6', blade: '#e6f1fb',
+  hilt: '#20242f', eye: '#7fe3ff'
+};
+
+function pxLine(ctx, x1, y1, x2, y2, w, color) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const n = Math.max(1, Math.ceil(Math.hypot(dx, dy)));
+  ctx.fillStyle = color;
+  for (let i = 0; i <= n; i++) {
+    const x = Math.round(x1 + dx * i / n), y = Math.round(y1 + dy * i / n);
+    ctx.fillRect(x - (w >> 1), y - (w >> 1), w, w);
+  }
+}
+
+function drawPixelHero(pose) {
+  const c = hp;
+  c.clearRect(0, 0, 96, 120);
+  const hipY = 76 + pose.bob;
+  const hipX = 48 + pose.step;
+  const lean = pose.lean;
+  const shX = hipX + Math.sin(lean) * 30;
+  const shY = hipY - Math.cos(lean) * 30;
+
+  const leg = (a1, a2, side) => {
+    const hx0 = hipX + side * 4;
+    const kx = hx0 + Math.sin(a1) * 16, ky = hipY + Math.cos(a1) * 16;
+    const fx = kx + Math.sin(a1 + a2) * 16, fy = ky + Math.cos(a1 + a2) * 16;
+    pxLine(c, hx0, hipY, kx, ky, 5, '#0a0c12');
+    pxLine(c, kx, ky, fx, fy, 4, '#0d1018');
+    c.fillStyle = '#0a0c12';
+    c.fillRect(Math.round(fx) - 3, Math.round(fy) - 1, 7, 3);
+    c.fillStyle = '#1a1e28';
+    c.fillRect(Math.round(fx) - 3, Math.round(fy) + 1, 7, 1);
+  };
+
+  const arm = (a1, a2, side, col, w, len = 15) => {
+    const sx = shX + side * 3;
+    const ex = sx + Math.sin(a1) * len, ey = shY + Math.cos(a1) * len;
+    const hx2 = ex + Math.sin(a1 + a2) * len, hy2 = ey + Math.cos(a1 + a2) * len;
+    pxLine(c, sx, shY, ex, ey, w, col);
+    pxLine(c, ex, ey, hx2, hy2, w - 1, col);
+    return { x: hx2, y: hy2 };
+  };
+
+  // 围巾（身后）
+  c.fillStyle = '#8f1c28';
+  pxLine(c, shX - 4, shY - 2, shX - 18 - pose.scarf, shY + 8 + pose.scarf * 2, 3, '#8f1c28');
+  pxLine(c, shX - 4, shY + 1, shX - 14 - pose.scarf * 0.6, shY + 16, 2, '#6f141e');
+
+  // 后腿、后臂
+  leg(pose.legB, pose.shinB, -1);
+  arm(pose.armB, 0.2, 1, '#0e111a', 4);
+
+  // 大衣下摆
+  c.fillStyle = '#10131c';
+  c.beginPath();
+  c.moveTo(hipX - 9, hipY - 2);
+  c.lineTo(hipX - 15 - pose.scarf * 0.5, hipY + 22);
+  c.lineTo(hipX - 3, hipY + 12);
+  c.closePath();
+  c.fill();
+
+  // 躯干
+  for (let y = Math.round(shY); y <= Math.round(hipY); y++) {
+    const t = (y - shY) / Math.max(1, hipY - shY);
+    const w = Math.round(13 + t * 5);
+    c.fillStyle = '#14161f';
+    c.fillRect(Math.round(shX + (hipX - shX) * t - w / 2), y, w, 1);
+  }
+  // 灰色羽织
+  c.fillStyle = '#4a5163';
+  for (let y = Math.round(shY) + 2; y <= Math.round(hipY) - 3; y++) {
+    const t = (y - shY) / Math.max(1, hipY - shY);
+    c.fillRect(Math.round(shX + (hipX - shX) * t - 9), y, 5, 1);
+  }
+  c.fillStyle = '#3a4050';
+  for (let y = Math.round(shY) + 2; y <= Math.round(hipY) - 3; y += 3) {
+    const t = (y - shY) / Math.max(1, hipY - shY);
+    c.fillRect(Math.round(shX + (hipX - shX) * t - 9), y, 1, 1);
+  }
+  // 腰带
+  c.fillStyle = '#b3202f';
+  c.fillRect(Math.round(hipX) - 8, Math.round(hipY) - 4, 16, 3);
+  c.fillStyle = '#7d1420';
+  c.fillRect(Math.round(hipX) - 8, Math.round(hipY) - 1, 16, 1);
+
+  // 前腿
+  leg(pose.legF, pose.shinF, 1);
+
+  // 头
+  const headX = Math.round(shX + Math.sin(lean) * -3), headY = Math.round(shY - 15);
+  // 后发
+  c.fillStyle = '#0a0c12';
+  c.fillRect(headX - 7, headY - 6, 13, 12);
+  c.fillRect(headX - 9, headY - 3, 2, 7);
+  // 发尖
+  c.fillRect(headX - 7, headY - 9, 3, 4);
+  c.fillRect(headX - 1, headY - 10, 3, 5);
+  c.fillRect(headX + 4, headY - 8, 3, 4);
+  // 脸
+  c.fillStyle = '#e9d6c0';
+  c.fillRect(headX - 2, headY - 3, 8, 9);
+  c.fillStyle = '#d3bda6';
+  c.fillRect(headX - 2, headY + 4, 8, 2);
+  // 刘海
+  c.fillStyle = '#1b2030';
+  c.fillRect(headX - 4, headY - 4, 7, 3);
+  c.fillRect(headX + 3, headY - 4, 3, 2);
+  // 眼与嘴
+  c.fillStyle = '#7fe3ff';
+  c.fillRect(headX + 3, headY - 1, 2, 2);
+  c.fillStyle = '#b08f7a';
+  c.fillRect(headX + 3, headY + 4, 2, 1);
+
+  // 前臂 + 刀
+  const hand = arm(pose.armF, 0.15, -1, '#0e111a', 4);
+  c.fillStyle = '#d9d2c6';
+  c.fillRect(Math.round(hand.x) - 2, Math.round(hand.y) - 2, 4, 3);
+  const sa = pose.sword;
+  const tipX = hand.x + Math.sin(sa) * 40, tipY = hand.y + Math.cos(sa) * 40;
+  pxLine(c, hand.x, hand.y, tipX, tipY, 2, '#dfeaf6');
+  pxLine(c, hand.x, hand.y, hand.x + Math.sin(sa) * 14, hand.y + Math.cos(sa) * 14, 3, '#b9c6d6');
+  c.fillStyle = '#20242f';
+  c.fillRect(Math.round(hand.x) - 2, Math.round(hand.y) - 1, 5, 2);
+  return { tipX, tipY };
 }
 
 function drawCutoutPlayer() {
-  for (const k in CUT) if (!CUT[k].complete || !CUT[k].naturalWidth) return false;
-  const s = (PORTRAIT ? 1.5 : 1.7) * depth(P.y);
   const t = P.animT;
   const run = P.run ? 1 : 0;
   const ph = P.runPhase;
   const swinging = P.attackT > 0;
   const k = swinging ? 1 - P.attackT / P.attackDur : 0;
-  const heavy = swinging && (P.lastHeavy || P.lastStep === WPN().steps - 1);
   const hurt = P.hurtT > 0.2;
   const dodge = P.state === 'dodge';
 
-  let lean = 0, armL = -1.15, armR = 1.15, legL = 0.06, legR = -0.06, bob = 0, head = 0;
-  if (hurt) { lean = -0.25; armL = -0.7; armR = 0.6; }
-  else if (dodge) { lean = -0.22; armL = -0.8; armR = 1.3; }
+  const pose = { bob: 0, step: 0, lean: 0, armF: 0.25, armB: -0.2, legF: 0.06, legB: -0.06, shinF: 0, shinB: 0, sword: 0.5, scarf: 0 };
+  if (hurt) { pose.lean = -0.25; pose.armF = 0.9; pose.armB = 0.5; }
+  else if (dodge) { pose.lean = -0.2; pose.armF = 0.7; pose.armB = 0.9; }
   else if (swinging) {
     if (k < 0.24) {
       const e = k / 0.24;
-      armL = -1.15 + (-2.5 + 1.15) * e;
-      lean = -0.05 * e;
+      pose.armF = 0.25 + (-2.3 - 0.25) * e;
+      pose.sword = 0.5 + (-1.6 - 0.5) * e;
+      pose.lean = -0.06 * e;
     } else if (k < 0.58) {
       const e = (k - 0.24) / 0.34;
-      armL = -2.5 + (0.7 + 2.5) * e;
-      lean = 0.16 * e;
+      pose.armF = -2.3 + (0.9 + 2.3) * e;
+      pose.sword = -1.6 + (0.9 + 1.6) * e;
+      pose.lean = 0.18;
+      pose.step = 2 * Math.sin(e * Math.PI);
     } else {
       const e = (k - 0.58) / 0.42;
-      armL = 0.7 + (-1.15 - 0.7) * e;
-      lean = 0.1 * (1 - e);
+      pose.armF = 0.9 + (0.25 - 0.9) * e;
+      pose.sword = 0.9 + (0.5 - 0.9) * e;
+      pose.lean = 0.12 * (1 - e);
     }
-    if (heavy) { armL -= 0.3; lean += 0.06; }
   } else if (run) {
-    lean = 0.12;
-    legL = 0.5 * Math.sin(ph);
-    legR = -0.5 * Math.sin(ph);
-    armL = -1.15 + 0.16 * Math.sin(ph + Math.PI);
-    armR = 1.15 + 0.2 * Math.sin(ph);
-    bob = -Math.abs(Math.sin(ph * 2)) * 5;
-    head = 0.03 * Math.sin(ph);
+    pose.lean = 0.14;
+    pose.legF = Math.sin(ph) * 0.7;
+    pose.legB = -Math.sin(ph) * 0.7;
+    pose.shinF = Math.max(0, -Math.sin(ph)) * 0.7;
+    pose.shinB = Math.max(0, Math.sin(ph)) * 0.7;
+    pose.armF = 0.25 - 0.45 * Math.sin(ph);
+    pose.armB = -0.2 + 0.5 * Math.sin(ph);
+    pose.bob = -Math.abs(Math.sin(ph * 2)) * 2;
+    pose.scarf = 2 + Math.sin(ph) * 2;
   } else {
-    bob = Math.sin(t * 1.7) * 2;
-    armL = -1.15 + Math.sin(t * 1.3) * 0.02;
-    head = Math.sin(t * 1.1) * 0.01;
+    pose.bob = Math.sin(t * 1.8) * 1;
+    pose.armF = 0.25 + Math.sin(t * 1.3) * 0.03;
+    pose.scarf = Math.sin(t * 1.5) * 1.5;
   }
 
-  // 刀尖世界坐标 → 拖尾
-  const shx = CUTP.armL[0], shy = CUTP.armL[1];
-  const tipx = shx + Math.cos(armL) * (-26) - Math.sin(armL) * 6;
-  const tipy = shy + Math.sin(armL) * (-26) + Math.cos(armL) * 6;
+  const tip = drawPixelHero(pose);
+  const s = (PORTRAIT ? 1.6 : 1.8) * depth(P.y);
+  // 刀尖改为世界坐标（用于拖尾）
+  const tipWX = P.x + P.face * s * (tip.tipX - 48);
+  const tipWY = P.y + s * (tip.tipY - 112);
   for (const q of P.trail) q.life -= 0.016;
   if (P.trail.length > 22) P.trail.shift();
   P.trail = P.trail.filter(q => q.life > 0);
-  if (swinging) {
-    P.trail.push({ x: P.x + P.face * s * tipx, y: P.y + bob + s * tipy, life: 0.2 });
-  }
+  if (swinging) P.trail.push({ x: tipWX, y: tipWY, life: 0.16 });
   if (P.trail.length > 1) drawBladeTrail();
 
   g.save();
-  g.translate(P.x, P.y + bob);
+  g.translate(P.x, P.y);
   g.scale(P.face * s, s);
-  drawPart('legR', legR);
-  drawPart('legL', legL);
-  g.save();
-  g.rotate(lean);
-  drawPart('torso', 0);
-  drawPart('armR', armR);
-  drawPart('head', head);
-  drawPart('armL', armL);
-  g.restore();
+  g.imageSmoothingEnabled = false;
+  g.drawImage(HERO_PIX, -48, -112);
+  g.imageSmoothingEnabled = true;
   g.restore();
   return true;
 }
@@ -4365,5 +4446,5 @@ const qs = new URLSearchParams(location.search);
 if (qs.get('skip') === '1') setTimeout(() => startGame(), 80);
 
 BOOTED = true;
-window.__tide = { G, P, enemies, projectiles, startGame, spawnEnemy, startStage, attack, dash, tryUlt, hurtPlayer, killEnemy, hitEnemy, endGame, joy, buildShareCanvas };
+window.__tide = { G, P, heroPix: () => { drawPixelHero({ bob: 0, step: 0, lean: 0, armF: 0.25, armB: -0.2, legF: 0.06, legB: -0.06, shinF: 0, shinB: 0, sword: 0.5, scarf: 1 }); return HERO_PIX.toDataURL(); }, enemies, projectiles, startGame, spawnEnemy, startStage, attack, dash, tryUlt, hurtPlayer, killEnemy, hitEnemy, endGame, joy, buildShareCanvas };
 })();
