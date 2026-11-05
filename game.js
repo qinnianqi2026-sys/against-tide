@@ -178,7 +178,7 @@ const SFX = {
 
 /* ---------------- 状态 ---------------- */
 const G = {
-  mode: 'title', paused: false, upgrade: null, cutin: null, taken: new Set(), eliteDone: false, elite2Done: false, execT: 0, execX: 0, execY: 0,
+  mode: 'title', paused: false, upgrade: null, weaponPick: null, weapon: 'mingce', weaponName: '名 册', cutin: null, taken: new Set(), eliteDone: false, elite2Done: false, execT: 0, execX: 0, execY: 0,
   t: 0, runT: 0, stage: 1, stageKills: 0, stageQuota: 0, stageClearT: 0, victory: false, score: 0, kills: 0,
   combo: 0, comboT: 0, maxCombo: 0,
   meter: 0,
@@ -265,7 +265,7 @@ const TBTN = [
   { id: 'pause', x: W - 40, y: 34, r: 22, label: '' }
 ];
 function togglePause() {
-  if (G.mode !== 'play' || G.upgrade || G.talent) return;
+  if (G.mode !== 'play' || G.upgrade || G.talent || G.weaponPick) return;
   G.paused = !G.paused;
 }
 function canvasPos(e) {
@@ -293,7 +293,7 @@ canvas.addEventListener('pointerdown', (e) => {
   audioInit();
   tryFullscreen();
   const p = canvasPos(e);
-  if (G.mode === 'play' && G.paused && !G.talent && !G.upgrade) {
+  if (G.mode === 'play' && G.paused && !G.talent && !G.upgrade && !G.weaponPick) {
     for (let i = 0; i < 4; i++) {
       const r = pauseRowRect(i);
       if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { pauseAction(i); return; }
@@ -304,7 +304,7 @@ canvas.addEventListener('pointerdown', (e) => {
     const r = shareRect();
     if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { saveShareCard(); return; }
   }
-  if (G.mode === 'play' && (G.talent || G.upgrade)) {
+  if (G.mode === 'play' && (G.talent || G.upgrade || G.weaponPick)) {
     const cw = 300, ch = 260, gap = 32;
     const x0 = (W - (cw * 3 + gap * 2)) / 2;
     for (let i = 0; i < 3; i++) {
@@ -352,7 +352,7 @@ canvas.addEventListener('pointercancel', endTouch);
 canvas.addEventListener('pointerleave', endTouch);
 
 function onPress(code) {
-  if (G.mode === 'play' && (G.talent || G.upgrade)) {
+  if (G.mode === 'play' && (G.talent || G.upgrade || G.weaponPick)) {
     const i = code === 'Digit1' ? 0 : code === 'Digit2' ? 1 : code === 'Digit3' ? 2 : -1;
     if (i >= 0) chooseCard(i);
     return;
@@ -966,7 +966,7 @@ function drawRig() {
   const dodge = P.state === 'dodge';
   const swinging = P.attackT > 0;
   const k = swinging ? 1 - P.attackT / P.attackDur : 0;
-  const heavy = swinging && (P.lastHeavy || P.lastStep === 3);
+  const heavy = swinging && (P.lastHeavy || P.lastStep === WPN().steps - 1);
 
   let blade = -0.6, armF = 0.3, lean = 0, crouch = 0.05, headTilt = 0;
   if (hurt) {
@@ -1382,12 +1382,13 @@ function attack(heavy) {
   P.attackAngle = P.aim;
   P.face = Math.cos(P.aim) >= 0 ? 1 : -1;
 
+  const WP = WPN();
   let range, half, dmg, launch = 0, step = 0;
   if (heavy) {
     P.lastHeavy = true;
-    P.attackT = 0.44; P.attackDur = 0.44;
+    P.attackT = WP.heavyDur; P.attackDur = WP.heavyDur;
     P.step = 0;
-    range = 172 * P.rangeMul; half = 1.8; dmg = 4 + P.dmgBonus; launch = 330;
+    range = WP.heavyRange * P.rangeMul; half = 1.8; dmg = WP.heavyDmg + P.dmgBonus; launch = WP.heavyLaunch;
     P.x = clamp(P.x + Math.cos(P.aim) * 30, ARENA.x1, ARENA.x2);
     P.y = clamp(P.y + Math.sin(P.aim) * 22, ARENA.y1, ARENA.y2);
     addShake(9);
@@ -1397,14 +1398,14 @@ function attack(heavy) {
     step = P.step;
     P.lastHeavy = false;
     P.lastStep = step;
-    P.step = (P.step + 1) % 4;
-    P.attackT = 0.24; P.attackDur = 0.24;
-    range = (112 + step * 12) * P.rangeMul;
-    half = step === 2 ? 1.95 : step === 3 ? 1.5 : 1.2;
-    dmg = (step === 3 ? 3 : step === 2 ? 2 : 1) + P.dmgBonus;
-    if (step === 3) launch = 240;
-    P.x = clamp(P.x + Math.cos(P.aim) * 16, ARENA.x1, ARENA.x2);
-    P.y = clamp(P.y + Math.sin(P.aim) * 12, ARENA.y1, ARENA.y2);
+    P.step = (P.step + 1) % WP.steps;
+    P.attackT = WP.dur; P.attackDur = WP.dur;
+    range = WP.range[step] * P.rangeMul;
+    half = WP.half[step];
+    dmg = WP.dmg[step] + P.dmgBonus;
+    if (step === WP.steps - 1) launch = WP.launchLast;
+    P.x = clamp(P.x + Math.cos(P.aim) * WP.lunge, ARENA.x1, ARENA.x2);
+    P.y = clamp(P.y + Math.sin(P.aim) * WP.lunge * 0.7, ARENA.y1, ARENA.y2);
     SFX.slash();
   }
 
@@ -2015,26 +2016,44 @@ const STAGES = [
 ];
 
 const TALENTS = [
-  { id: 't_wave', name: '开 卷', desc: '开局自带「墨痕」', apply() { P.hasWave = true; } },
-  { id: 't_burn', name: '引 火', desc: '开局自带「焚名」', apply() { P.hasBurn = true; } },
-  { id: 't_frost', name: '凝 霜', desc: '开局自带「霜印」', apply() { P.hasFrost = true; } },
-  { id: 't_chain', name: '听 雷', desc: '开局自带「回响」', apply() { P.hasChain = true; } },
-  { id: 't_dash', name: '踏 影', desc: '闪避冷却 -35%，见切窗口 +25%', apply() { P.dashCdMul = 0.65; P.parryWin = 1.25; } },
-  { id: 't_blood', name: '血 誓', desc: '攻击 +2，最大生命 -2', apply() { P.dmgBonus += 2; P.maxHp = Math.max(4, P.maxHp - 2); P.hp = P.maxHp; } }
+  { id: 't_wave', name: '剑 心', desc: '开局自带「剑气」', apply() { P.hasWave = true; } },
+  { id: 't_burn', name: '业 火', desc: '开局自带「焚身」', apply() { P.hasBurn = true; } },
+  { id: 't_frost', name: '霜 心', desc: '开局自带「霜刃」', apply() { P.hasFrost = true; } },
+  { id: 't_chain', name: '雷 引', desc: '开局自带「连锁雷」', apply() { P.hasChain = true; } },
+  { id: 't_dash', name: '疾 影', desc: '闪避冷却 -35%，见切窗口 +25%', apply() { P.dashCdMul = 0.65; P.parryWin = 1.25; } },
+  { id: 't_blood', name: '血 契', desc: '攻击 +2，最大生命 -2', apply() { P.dmgBonus += 2; P.maxHp = Math.max(4, P.maxHp - 2); P.hp = P.maxHp; } }
 ];
 
-const UPGRADES = [
-  { id: 'wave', name: '墨 痕', desc: '刀气凝成一道墨痕，贯穿前方', apply() { P.hasWave = true; } },
-  { id: 'burn', name: '焚 名', desc: '被斩中的名字烧起来，死后炸开', apply() { P.hasBurn = true; } },
-  { id: 'chain', name: '回 响', desc: '刀声在敌群里回响，波及两人', apply() { P.hasChain = true; } },
-  { id: 'frost', name: '霜 印', desc: '命中留下霜印，行动迟滞', apply() { P.hasFrost = true; } },
-  { id: 'soul', name: '归 名', desc: '斩落的名字回到刀上，回复生命', apply() { P.lifesteal += 0.4; } },
-  { id: 'firestorm', name: '焚 响', badge: '相生', req: () => P.hasBurn && P.hasChain, desc: '回响带上火，一点燃成一片', apply() { P.firestorm = true; } },
-  { id: 'iceblade', name: '霜 墨', badge: '相生', req: () => P.hasFrost && P.hasWave, desc: '墨痕所过之处，尽数结霜', apply() { P.iceblade = true; } },
-  { id: 'split', name: '分 墨', badge: '相生', req: () => P.hasWave, desc: '一道墨痕，裂成三道', apply() { P.splitWave = true; } },
-  { id: 'shatter', name: '碎 印', badge: '相生', req: () => P.hasFrost, desc: '对霜印目标伤害大增，击杀碎成冰屑', apply() { P.shatter = true; } },
-  { id: 'bloodburn', name: '名 烬', badge: '相生', req: () => P.hasBurn && P.lifesteal > 0, desc: '燃烧的名字，化为你的生命', apply() { P.bloodburn = true; } }
+const WEAPONS = [
+  { id: 'mingce', name: '名 册', type: '长刃 · 均衡', desc: '四段连斩，范围适中',
+    steps: 4, dur: 0.24, range: [112, 124, 136, 148], half: [1.2, 1.2, 1.95, 1.5],
+    dmg: [1, 1, 2, 3], lunge: 16, heavyDur: 0.44, heavyRange: 172, heavyDmg: 4, heavyLaunch: 330, launchLast: 240 },
+  { id: 'zhui', name: '朱 痕', type: '双刃 · 迅捷', desc: '六段快斩，范围较短',
+    steps: 6, dur: 0.17, range: [92, 96, 100, 104, 108, 118], half: [1.05, 1.05, 1.05, 1.05, 1.6, 1.3],
+    dmg: [1, 1, 1, 1, 1, 2], lunge: 22, heavyDur: 0.38, heavyRange: 150, heavyDmg: 3, heavyLaunch: 220, launchLast: 160 },
+  { id: 'shangu', name: '山 骨', type: '重刃 · 破阵', desc: '三段重击，范围大、能击飞',
+    steps: 3, dur: 0.34, range: [150, 170, 190], half: [1.4, 1.4, 1.9],
+    dmg: [2, 2, 4], lunge: 12, heavyDur: 0.55, heavyRange: 215, heavyDmg: 7, heavyLaunch: 420, launchLast: 320 }
 ];
+const WPN = () => WEAPONS.find(w => w.id === G.weapon) || WEAPONS[0];
+
+const UPGRADES = [
+  { id: 'wave', name: '剑 气', desc: '每段斩击飞出一道刀气，贯穿前方', apply() { P.hasWave = true; } },
+  { id: 'burn', name: '焚 身', desc: '命中造成燃烧，死亡时爆炸', apply() { P.hasBurn = true; } },
+  { id: 'chain', name: '连 锁 雷', desc: '命中时电弧弹到附近 2 人', apply() { P.hasChain = true; } },
+  { id: 'frost', name: '霜 刃', desc: '命中减速 55%', apply() { P.hasFrost = true; } },
+  { id: 'soul', name: '吸 魂', desc: '击杀回复生命', apply() { P.lifesteal += 0.4; } },
+  { id: 'firestorm', name: '雷 火', badge: '组合', req: () => P.hasBurn && P.hasChain, desc: '电弧附带燃烧，点燃成片', apply() { P.firestorm = true; } },
+  { id: 'iceblade', name: '冰 刃', badge: '组合', req: () => P.hasFrost && P.hasWave, desc: '刀气附带霜冻，成片减速', apply() { P.iceblade = true; } },
+  { id: 'split', name: '裂 空', badge: '组合', req: () => P.hasWave, desc: '刀气一分为三', apply() { P.splitWave = true; } },
+  { id: 'shatter', name: '碎 冰', badge: '组合', req: () => P.hasFrost, desc: '对减速目标伤害 +60%，击杀碎冰爆炸', apply() { P.shatter = true; } },
+  { id: 'bloodburn', name: '血 燃', badge: '组合', req: () => P.hasBurn && P.lifesteal > 0, desc: '燃烧伤害转化为治疗', apply() { P.bloodburn = true; } }
+];
+
+function offerWeapon() {
+  G.weaponPick = { opts: WEAPONS.slice() };
+  G.paused = true;
+}
 
 function offerTalent() {
   const pool = TALENTS.slice();
@@ -2047,6 +2066,15 @@ function offerTalent() {
 }
 
 function chooseCard(i) {
+  if (G.weaponPick) {
+    const w = G.weaponPick.opts[i];
+    if (!w) return;
+    G.weapon = w.id;
+    G.weaponName = w.name;
+    G.weaponPick = null;
+    offerTalent();
+    return;
+  }
   if (G.talent) {
     const t = G.talent.opts[i];
     if (!t) return;
@@ -2356,8 +2384,10 @@ function startGame() {
   enemies.length = 0; projectiles.length = 0; parts.length = 0; slashes.length = 0; texts.length = 0;
   rings.length = 0; decals.length = 0;
   G.talent = null;
-  G.talentName = null;
-  offerTalent();
+  G.weaponPick = null;
+  G.weapon = 'mingce';
+  G.weaponName = '名 册';
+  offerWeapon();
 }
 
 /* ---------------- 天气 ---------------- */
@@ -3242,7 +3272,8 @@ function render() {
     g.fillText('ERROR: ' + G.fatal, 16, H - 18);
     g.restore();
   }
-  if (G.talent) drawTalent();
+  if (G.weaponPick) drawWeapons();
+  else if (G.talent) drawTalent();
   else if (G.upgrade) drawUpgrade();
   else if (G.paused) drawPause();
   if (G.mode === 'result') drawResult();
@@ -3421,12 +3452,14 @@ function drawHUD() {
     g.shadowBlur = 0;
   }
   text(String(P.hp), 168, 92, { size: 12, color: 'rgba(200,215,240,0.5)' });
+  // 兵刃
+  if (G.weaponName) text('兵 刃 · ' + G.weaponName, 40, 112, { size: 10, color: '#bfe8ff', spacing: 2 });
   // 天赋
   if (G.talentName) {
-    text('天 赋 · ' + G.talentName, 40, 108, { size: 10, color: '#ffd98a', spacing: 2 });
+    text('天 赋 · ' + G.talentName, 40, 128, { size: 10, color: '#ffd98a', spacing: 2 });
   }
   // 已获得特性
-  let tx = 40, ty = G.talentName ? 132 : 116;
+  let tx = 40, ty = G.talentName ? 150 : 130;
   g.textAlign = 'left';
   for (const id of G.taken) {
     const u = UPGRADES.find(x => x.id === id);
@@ -3589,7 +3622,7 @@ function drawTitle() {
   g.fillRect(120, 176, 2, 52);
   g.shadowBlur = 0;
 
-  text('A G A I N S T   T H E   T I D E', 148, 194, { size: 11, color: 'rgba(170,190,220,0.7)', spacing: 6 });
+  text('T H E   N A M E   B L A D E', 148, 194, { size: 11, color: 'rgba(170,190,220,0.7)', spacing: 6 });
   text('斩名录', 144, 300, { size: 100, family: F_SERIF, weight: 700, color: '#f2f5fc', spacing: 12, glow: 30, glowColor: 'rgba(255,70,90,0.45)' });
   text('溯 · 十 九 · 被 逐 出 师 门 的 剑 客', 150, 370, { size: 13, color: 'rgba(200,215,240,0.8)', spacing: 3 });
 
@@ -3725,16 +3758,22 @@ function drawCards(title, sub, cards) {
       g.font = `700 11px ${F_SANS}`;
       g.letterSpacing = '4px';
       g.fillStyle = '#ffc25a';
-      g.fillText('相 生', x + cw / 2, y + 46);
+      g.fillText('组 合', x + cw / 2, y + 46);
     }
     g.font = `700 26px ${F_SERIF}`;
     g.letterSpacing = '6px';
     g.fillStyle = isSyn ? '#ffd98a' : '#f0f3fa';
-    g.fillText(c.name, x + cw / 2, y + 92);
+    g.fillText(c.name, x + cw / 2, y + 86);
+    if (c.type) {
+      g.font = `600 11px ${F_SANS}`;
+      g.letterSpacing = '3px';
+      g.fillStyle = 'rgba(160,220,255,0.85)';
+      g.fillText(c.type, x + cw / 2, y + 116);
+    }
     g.font = `400 14px ${F_SANS}`;
     g.letterSpacing = '2px';
     g.fillStyle = 'rgba(200,215,240,0.75)';
-    g.fillText(c.desc, x + cw / 2, y + 140);
+    g.fillText(c.desc, x + cw / 2, y + 152);
     g.font = `700 12px ${F_NUM}`;
     g.letterSpacing = '2px';
     g.fillStyle = 'rgba(255,140,150,0.9)';
@@ -3756,12 +3795,16 @@ function pauseAction(i) {
     enemies.length = 0; projectiles.length = 0; waves.length = 0;
   }
 }
+function drawWeapons() {
+  drawCards('选 武 器', '选一把开局兵刃   ·   按 1 / 2 / 3', G.weaponPick.opts);
+}
+
 function drawUpgrade() {
-  drawCards('刻 名', '从斩落的名字里，刻下一个   ·   按 1 / 2 / 3', G.upgrade.opts);
+  drawCards('斩 获', '选 一 个 强 化   ·   按 1 / 2 / 3', G.upgrade.opts);
 }
 
 function drawTalent() {
-  drawCards('开 卷', '选 一 个 开 局 天 赋   ·   按 1 / 2 / 3', G.talent.opts);
+  drawCards('择 天 赋', '选 一 个 开 局 天 赋   ·   按 1 / 2 / 3', G.talent.opts);
 }
 
 function drawPause() {
@@ -3852,7 +3895,7 @@ function buildShareCanvas() {
   x.shadowBlur = 0;
   x.font = `400 20px ${SANS}`;
   x.fillStyle = 'rgba(255,180,190,0.75)';
-  x.fillText('A G A I N S T   T H E   T I D E', 78, 216);
+  x.fillText('T H E   N A M E   B L A D E', 78, 216);
 
   const rank = G.rank || calcRank();
   x.textAlign = 'right';
