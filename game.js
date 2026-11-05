@@ -391,6 +391,23 @@ IMG.bust.src = 'art/su-bust.png';
 IMG.dusk.src = 'art/bg-dusk.png';
 IMG.cutin.src = 'art/cutin.png';
 IMG.card.src = 'art/su-card.png';
+const CUT = {};
+const CUTP = {
+  head: [40, -730], torso: [0, 0], armL: [-140, -650], armR: [260, -650], legL: [-60, -50], legR: [140, -50]
+};
+const CUTM = {};
+for (const k of ['head', 'torso', 'armL', 'armR', 'legL', 'legR']) {
+  const im = new Image();
+  im.src = 'art/parts/' + k + '.webp';
+  CUT[k] = im;
+}
+CUTM.head = { w: 428, h: 410, px: 187, py: 384 };
+CUTM.torso = { w: 649, h: 771, px: 233, py: 755 };
+CUTM.armL = { w: 633, h: 359, px: 608, py: 16 };
+CUTM.armR = { w: 590, h: 208, px: 45, py: 83 };
+CUTM.legL = { w: 335, h: 1058, px: 264, py: 65 };
+CUTM.legR = { w: 381, h: 1191, px: 135, py: 65 };
+
 const PART = { body: new Image(), legL: new Image(), legR: new Image() };
 PART.body.src = 'art/frames/rig-body.webp';
 PART.legL.src = 'art/frames/rig-legL.webp';
@@ -1260,7 +1277,77 @@ function drawCutout(aL, aR, lean, bob) {
   return true;
 }
 
+function drawPart(name, angle) {
+  const img = CUT[name], m = CUTM[name];
+  if (!img || !img.complete || !img.naturalWidth) return false;
+  const j = CUTP[name];
+  g.save();
+  g.translate(j[0], j[1]);
+  g.rotate(angle || 0);
+  g.drawImage(img, -m.px, -m.py);
+  g.restore();
+  return true;
+}
+
+function drawCutoutPlayer() {
+  for (const k in CUT) if (!CUT[k].complete || !CUT[k].naturalWidth) return false;
+  const s = 0.092 * depth(P.y);
+  const t = P.animT;
+  const run = P.run ? 1 : 0;
+  const ph = P.runPhase;
+  const swinging = P.attackT > 0;
+  const k = swinging ? 1 - P.attackT / P.attackDur : 0;
+  const heavy = swinging && (P.lastHeavy || P.lastStep === WPN().steps - 1);
+  const hurt = P.hurtT > 0.2;
+  const dodge = P.state === 'dodge';
+
+  let lean = 0, armL = -1.15, armR = 1.15, legL = 0.06, legR = -0.06, bob = 0, head = 0;
+  if (hurt) { lean = -0.25; armL = -0.7; armR = 0.6; }
+  else if (dodge) { lean = -0.22; armL = -0.8; armR = 1.3; }
+  else if (swinging) {
+    if (k < 0.24) {
+      const e = k / 0.24;
+      armL = -1.15 + (-2.5 + 1.15) * e;
+      lean = -0.05 * e;
+    } else if (k < 0.58) {
+      const e = (k - 0.24) / 0.34;
+      armL = -2.5 + (0.7 + 2.5) * e;
+      lean = 0.16 * e;
+    } else {
+      const e = (k - 0.58) / 0.42;
+      armL = 0.7 + (-1.15 - 0.7) * e;
+      lean = 0.1 * (1 - e);
+    }
+    if (heavy) { armL -= 0.3; lean += 0.06; }
+  } else if (run) {
+    lean = 0.12;
+    legL = 0.5 * Math.sin(ph);
+    legR = -0.5 * Math.sin(ph);
+    armL = -1.15 + 0.16 * Math.sin(ph + Math.PI);
+    armR = 1.15 + 0.2 * Math.sin(ph);
+    bob = -Math.abs(Math.sin(ph * 2)) * 5;
+    head = 0.03 * Math.sin(ph);
+  } else {
+    bob = Math.sin(t * 1.7) * 2;
+    armL = -1.15 + Math.sin(t * 1.3) * 0.02;
+    head = Math.sin(t * 1.1) * 0.01;
+  }
+
+  g.save();
+  g.translate(P.x, P.y + bob);
+  g.scale(P.face * s, s);
+  drawPart('legR', legR);
+  drawPart('legL', legL);
+  drawPart('armR', armR);
+  drawPart('torso', lean);
+  drawPart('head', lean * 0.4 + head);
+  drawPart('armL', armL);
+  g.restore();
+  return true;
+}
+
 function drawPlayerSprite() {
+  if (!location.search.includes('rig=1') && drawCutoutPlayer()) return true;
   drawRig();
   return true;
 }
