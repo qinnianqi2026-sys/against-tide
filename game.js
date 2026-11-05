@@ -1277,12 +1277,12 @@ function drawCutout(aL, aR, lean, bob) {
 
 const HERO_FRAMES = { run: [], atk: [] };
 for (let i = 1; i <= 4; i++) {
-  const a = new Image(); a.src = 'art/pixel/hero/run-' + i + '.png'; HERO_FRAMES.run.push(a);
-  const b = new Image(); b.src = 'art/pixel/hero/atk-' + i + '.png'; HERO_FRAMES.atk.push(b);
+  const a = new Image(); a.src = 'art/pixel/hero/run-' + i + '.webp'; HERO_FRAMES.run.push(a);
+  const b = new Image(); b.src = 'art/pixel/hero/atk-' + i + '.webp'; HERO_FRAMES.atk.push(b);
 }
 const HERO_META = {
-  run: [{ax:418,h:847},{ax:268,h:851},{ax:408,h:837},{ax:384,h:846}],
-  atk: [{ax:290,h:931},{ax:241,h:815},{ax:281,h:789},{ax:335,h:825}]
+  run: [{ax:157,h:320},{ax:100,h:320},{ax:155,h:320},{ax:144,h:320}],
+  atk: [{ax:99,h:320},{ax:93,h:320},{ax:113,h:320},{ax:129,h:320}]
 };
 
 const HERO_PIX = document.createElement('canvas');
@@ -1433,7 +1433,7 @@ function drawCutoutPlayer() {
   const img = HERO_FRAMES[set][idx];
   const m = HERO_META[set][idx];
   if (!img || !img.complete || !img.naturalWidth) return false;
-  const s = (PORTRAIT ? 0.17 : 0.19) * depth(P.y);
+  const s = (PORTRAIT ? 0.47 : 0.52) * depth(P.y);
   g.save();
   g.translate(P.x, P.y + bob);
   g.scale(-P.face * s, s);
