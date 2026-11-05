@@ -6,6 +6,7 @@
 'use strict';
 
 let W = 1280, H = 720;
+let PORTRAIT = false;
 const WORLD_W = 2600;
 const ARENA = { x1: 80, x2: WORLD_W - 80, y1: 380, y2: 690 };
 const CAM = { x: 640, y: 360 };
@@ -22,8 +23,17 @@ canvas.height = H * DPR;
 function resizeCanvas() {
   const vw = window.innerWidth, vh = window.innerHeight;
   const aspect = vw / Math.max(1, vh);
-  W = Math.round(Math.max(1280, Math.min(1760, 720 * aspect)));
-  H = 720;
+  PORTRAIT = aspect < 0.95;
+  if (PORTRAIT) {
+    W = 720; H = 1280;
+    ARENA.y1 = 420; ARENA.y2 = 1200;
+    CAM.y = 860;
+  } else {
+    W = Math.round(Math.max(1280, Math.min(1760, 720 * aspect)));
+    H = 720;
+    ARENA.y1 = 380; ARENA.y2 = 690;
+    CAM.y = 360;
+  }
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   canvas.style.width = '100vw';
@@ -264,6 +274,14 @@ const TBTN = [
   { id: 'ult', x: W - 252, y: H - 212, r: 48, label: '名册' },
   { id: 'pause', x: W - 40, y: 34, r: 22, label: '' }
 ];
+if (typeof layoutTouch === 'function') layoutTouch();
+function layoutTouch() {
+  TBTN[0].x = W - (PORTRAIT ? 95 : 112); TBTN[0].y = H - (PORTRAIT ? 210 : 138);
+  TBTN[1].x = W - (PORTRAIT ? 195 : 246); TBTN[1].y = H - (PORTRAIT ? 105 : 86);
+  TBTN[2].x = W - (PORTRAIT ? 195 : 252); TBTN[2].y = H - (PORTRAIT ? 315 : 212);
+  TBTN[3].x = W - 40;  TBTN[3].y = 34;
+}
+
 function togglePause() {
   if (G.mode !== 'play' || G.upgrade || G.talent || G.weaponPick) return;
   G.paused = !G.paused;
@@ -2226,7 +2244,7 @@ function startStage(n, keep) {
   if (st.boss) {
     G.bloodMoon = true;
     P.hp = P.maxHp;
-    const boss = spawnEnemy('oni', clamp(P.x + 380, ARENA.x1 + 120, ARENA.x2 - 120), 520);
+    const boss = spawnEnemy('oni', clamp(P.x + 380, ARENA.x1 + 120, ARENA.x2 - 120), PORTRAIT ? 760 : 520);
     boss.state = 'enter';
     boss.st = 1.2;
     boss.phase = 1;
@@ -2317,7 +2335,7 @@ function update(dt) {
 
   G.runT += dt;
   CAM.x = lerp(CAM.x, clamp(P.x, W / 2, WORLD_W - W / 2), 1 - Math.exp(-5 * dt));
-  CAM.y = 360;
+  CAM.y = PORTRAIT ? 860 : 360;
   G.hitstop = Math.max(0, G.hitstop - dt);
   G.slowT = Math.max(0, G.slowT - dt);
   G.punch = Math.max(0, G.punch - dt * 7);
@@ -2391,7 +2409,6 @@ function updatePlayer(dt) {
     }
   }
   P.x = clamp(P.x, ARENA.x1, ARENA.x2);
-  P.y = clamp(P.y, ARENA.y1, ARENA.y2);
 }
 
 function updateUlt(dt) {
@@ -2483,7 +2500,7 @@ function startGame() {
   G.bloodMoon = false; G.ult = null; G.banner = null; G.timeScale = 1;
   G.spawnT = 0.4; G.endT = 0; G.streak = 0;
   P.maxHp = 10;
-  P.x = W / 2; P.y = 580; CAM.x = W / 2; P.hp = P.maxHp; P.aim = Math.PI; P.face = 1;
+  P.x = W / 2; P.y = PORTRAIT ? 800 : 580; CAM.x = W / 2; CAM.y = PORTRAIT ? 860 : 360; P.hp = P.maxHp; P.aim = Math.PI; P.face = 1;
   P.attackT = 0; P.dashT = 0; P.dashCd = 0; P.invuln = 1.0; P.hurtT = 0;
   P.dmgBonus = 0; P.speedMul = 1; P.rangeMul = 1; P.dashCdMul = 1; P.ultGainMul = 1;
   P.hasWave = false; P.hasChain = false; P.hasBurn = false; P.hasFrost = false; P.lifesteal = 0; P.chainCd = 0;
@@ -3123,7 +3140,13 @@ function render() {
     const bw = W * BSCALE, bh = H * BSCALE;
     const bx = (W - bw) / 2, by = H - bh;
     if (duskScene) {
-      g.drawImage(bgD, bx, by, bw, bh);
+      if (PORTRAIT) {
+        const sc = Math.max(W / 1280, H / 720);
+        const dw = 1280 * sc, dh = 720 * sc;
+        g.drawImage(bgD, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      } else {
+        g.drawImage(bgD, bx, by, bw, bh);
+      }
       g.drawImage(overlayDusk, 0, 0, W, H);
     } else {
       g.drawImage(bgN, bx, by, bw, bh);
@@ -3153,7 +3176,12 @@ function render() {
     g.scale(pz, pz);
     g.translate(-P.x, -P.y);
   }
-  g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 330);
+  if (PORTRAIT) {
+    g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 420, WORLD_W, 900);
+    g.fillStyle = duskScene ? '#1a120f' : '#0e1018';
+    g.fillRect(0, 1310, WORLD_W, 400);
+  }
+  else g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 330);
   drawProps();
   drawWaves();
 
@@ -3439,7 +3467,7 @@ function drawExec() {
 
 function drawTouchUI() {
   g.save();
-  const jx = joy.active ? joy.ox : 150, jy = joy.active ? joy.oy : H - 150;
+  const jx = joy.active ? joy.ox : 150, jy = joy.active ? joy.oy : H - (PORTRAIT ? 240 : 150);
   const baseR = 82;
   g.globalAlpha = joy.active ? 0.9 : 0.32;
   g.fillStyle = 'rgba(10,14,24,0.55)';
@@ -3483,15 +3511,15 @@ function drawHUD() {
   g.textAlign = 'center';
   if (G.stage < BOSS_STAGE) {
     const st = STAGES[G.stage - 1];
-    text(st.title, W / 2, 44, { size: 12, color: 'rgba(200,215,240,0.82)', align: 'center', spacing: 5 });
-    const bw = 280, bx = W / 2 - bw / 2, by = 56;
+    text(st.title, W / 2, PORTRAIT ? 68 : 44, { size: 12, color: 'rgba(200,215,240,0.82)', align: 'center', spacing: 5 });
+    const bw = 280, bx = W / 2 - bw / 2, by = PORTRAIT ? 90 : 56;
     g.fillStyle = 'rgba(6,8,14,0.72)';
     roundRect(bx, by, bw, 4, 2); g.fill();
     g.fillStyle = '#ff5f70';
     g.shadowColor = '#ff5f70'; g.shadowBlur = 8;
     roundRect(bx, by, bw * clamp(G.stageKills / st.quota, 0, 1), 4, 2); g.fill();
     g.shadowBlur = 0;
-    text(`斩 ${G.stageKills} / ${st.quota}`, W / 2, 80, { size: 10, color: 'rgba(170,190,220,0.6)', align: 'center', spacing: 3 });
+    text(`斩 ${G.stageKills} / ${st.quota}`, W / 2, PORTRAIT ? 114 : 80, { size: 10, color: 'rgba(170,190,220,0.6)', align: 'center', spacing: 3 });
   } else {
     const boss = enemies.find(e => e.kind === 'oni' && !e.dead);
     text('鬼 武 者', W / 2, 40, { size: 13, color: '#ff9aa4', align: 'center', spacing: 7, glow: 12 });
@@ -3521,7 +3549,7 @@ function drawHUD() {
   // 分数
   g.save();
   g.textAlign = 'right';
-  const sy = IS_TOUCH ? 30 : 0;
+  const sy = (IS_TOUCH ? 30 : 0) + (PORTRAIT ? 40 : 0);
   text('SCORE', W - 54, 46 + sy, { size: 10, color: 'rgba(160,180,215,0.55)', align: 'right', spacing: 4 });
   text(String(G.score).padStart(7, '0'), W - 54, 80 + sy, { size: 28, family: F_NUM, weight: 700, color: '#eef2fb', align: 'right' });
   text(`BEST ${String(G.best).padStart(7, '0')}`, W - 54, 102 + sy, { size: 9, color: 'rgba(160,180,215,0.35)', align: 'right', spacing: 2 });
@@ -3552,23 +3580,23 @@ function drawHUD() {
 
   // HP
   g.save();
-  text('命', 52, 60, { size: 22, family: F_SERIF, weight: 700, color: '#eef2fb', spacing: 2 });
+  text('命', 52, PORTRAIT ? 76 : 60, { size: 22, family: F_SERIF, weight: 700, color: '#eef2fb', spacing: 2 });
   for (let i = 0; i < P.maxHp; i++) {
-    const x = 52 + (i % 5) * 22, y = 78 + Math.floor(i / 5) * 12;
+    const x = 52 + (i % 5) * 22, y = (PORTRAIT ? 94 : 78) + Math.floor(i / 5) * 12;
     g.fillStyle = i < P.hp ? '#ff4d63' : 'rgba(255,255,255,0.08)';
     if (i < P.hp) { g.shadowColor = '#ff4d63'; g.shadowBlur = 10; }
     g.fillRect(x, y, 16, 6);
     g.shadowBlur = 0;
   }
-  text(String(P.hp), 168, 92, { size: 12, color: 'rgba(200,215,240,0.5)' });
+  text(String(P.hp), 168, PORTRAIT ? 108 : 92, { size: 12, color: 'rgba(200,215,240,0.5)' });
   // 兵刃
-  if (G.weaponName) text('兵 刃 · ' + G.weaponName, 40, 112, { size: 10, color: '#bfe8ff', spacing: 2 });
+  if (G.weaponName) text('兵 刃 · ' + G.weaponName, 40, PORTRAIT ? 132 : 112, { size: 10, color: '#bfe8ff', spacing: 2 });
   // 天赋
   if (G.talentName) {
-    text('天 赋 · ' + G.talentName, 40, 128, { size: 10, color: '#ffd98a', spacing: 2 });
+    text('天 赋 · ' + G.talentName, 40, PORTRAIT ? 148 : 128, { size: 10, color: '#ffd98a', spacing: 2 });
   }
   // 已获得特性
-  let tx = 40, ty = G.talentName ? 150 : 130;
+  let tx = 40, ty = (G.talentName ? 150 : 130) + (PORTRAIT ? 20 : 0);
   g.textAlign = 'left';
   for (const id of G.taken) {
     const u = UPGRADES.find(x => x.id === id);
@@ -3587,7 +3615,7 @@ function drawHUD() {
   g.restore();
 
   // 名册槽
-  const bw = 380, bx = W / 2 - bw / 2, by = 668;
+  const bw = 380, bx = W / 2 - bw / 2, by = PORTRAIT ? H - 46 : 668;
   g.save();
   g.fillStyle = 'rgba(8,10,16,0.7)';
   roundRect(bx - 2, by - 2, bw + 4, 10, 5); g.fill();
@@ -3604,13 +3632,13 @@ function drawHUD() {
     g.save();
     g.globalAlpha = a;
     g.fillStyle = 'rgba(6,8,14,0.72)';
-    roundRect(W / 2 - 210, 596, 420, 40, 20);
+    roundRect(W / 2 - 210, PORTRAIT ? H - 420 : 596, 420, 40, 20);
     g.fill();
     g.textAlign = 'center';
     g.font = `600 14px ${F_SANS}`;
     g.letterSpacing = '2px';
     g.fillStyle = '#ffe8eb';
-    g.fillText(msgs[step], W / 2, 621);
+    g.fillText(msgs[step], W / 2, (PORTRAIT ? H - 420 : 596) + 25);
     g.restore();
   }
 
@@ -3652,7 +3680,7 @@ function drawHUD() {
     g.save();
     g.globalAlpha = Math.min(0.42, (12 - G.t) * 0.1);
     text(IS_TOUCH ? '左侧拖动移动    右侧斩 / 闪 / 名册' : 'WASD 移动    J 斩（按住蓄力）    K 闪身 / 见切    E 名册',
-      W / 2, 706, { size: 10, color: '#dfe8ff', align: 'center', spacing: 2 });
+      W / 2, PORTRAIT ? H - 14 : 706, { size: 10, color: '#dfe8ff', align: 'center', spacing: 2 });
     g.restore();
   }
 
@@ -3664,18 +3692,18 @@ function drawHUD() {
       g.save();
       g.globalAlpha = clamp(a, 0, 1);
       g.textAlign = 'center';
-      g.font = `700 44px ${F_SERIF}`;
-      g.letterSpacing = '12px';
+      g.font = `700 ${PORTRAIT ? 32 : 44}px ${F_SERIF}`;
+      g.letterSpacing = PORTRAIT ? '8px' : '12px';
       g.fillStyle = '#f0f3fa';
       g.shadowColor = 'rgba(255,70,90,0.8)';
       g.shadowBlur = 26;
-      g.fillText(b.title, W / 2 + 6, 210);
+      g.fillText(b.title, W / 2 + 6, PORTRAIT ? 330 : 210);
       if (b.sub) {
         g.font = `400 12px ${F_SANS}`;
         g.letterSpacing = '4px';
         g.fillStyle = 'rgba(210,220,245,0.7)';
         g.shadowBlur = 0;
-        g.fillText(b.sub, W / 2, 238);
+        g.fillText(b.sub, W / 2, PORTRAIT ? 358 : 238);
       }
       g.restore();
     }
