@@ -23,23 +23,28 @@ canvas.width = W * DPR;
 canvas.height = H * DPR;
 function resizeCanvas() {
   const vw = window.innerWidth, vh = window.innerHeight;
-  const aspect = vw / Math.max(1, vh);
-  PORTRAIT = aspect < 0.95;
-  if (PORTRAIT) {
-    W = 720; H = 1280;
-    ARENA.y1 = 420; ARENA.y2 = 1200;
-    CAM.y = 676;
-  } else {
-    W = Math.round(Math.max(1280, Math.min(1760, 720 * aspect)));
-    H = 720;
-    ARENA.y1 = 380; ARENA.y2 = 690;
-    CAM.y = 360;
+  const portraitNow = vh > vw;
+  if (portraitNow !== PORTRAIT) {
+    PORTRAIT = portraitNow;
+    if (PORTRAIT) {
+      W = 720; H = 1280;
+      ARENA.y1 = 420; ARENA.y2 = 1200;
+      CAM.y = 676;
+    } else {
+      W = 1280; H = 720;
+      ARENA.y1 = 380; ARENA.y2 = 690;
+      CAM.y = 360;
+    }
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    if (BOOTED) {
+      P.y = clamp(P.y, ARENA.y1, ARENA.y2);
+      layoutTouch();
+    }
   }
-  if (BOOTED) { P.y = clamp(P.y, ARENA.y1, ARENA.y2); layoutTouch(); }
-  canvas.width = W * DPR;
-  canvas.height = H * DPR;
-  canvas.style.width = '100vw';
-  canvas.style.height = '100vh';
+  const scale = Math.min(vw / W, vh / H);
+  canvas.style.width = Math.round(W * scale) + 'px';
+  canvas.style.height = Math.round(H * scale) + 'px';
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
@@ -417,20 +422,21 @@ IMG.cutin.src = 'art/cutin.png';
 IMG.card.src = 'art/su-card.png';
 const CUT = {};
 const CUTP = {
-  head: [40, -730], torso: [0, 0], armL: [-140, -650], armR: [260, -650], legL: [-60, -50], legR: [140, -50]
+  head: [2, -33], torso: [0, 0], armL: [-6, -29], armR: [12, -29], legL: [-3, -2], legR: [6, -2]
 };
-const CUTM = {};
+const CUTM = {
+  head: { w: 19, h: 18, px: 8, py: 17 },
+  torso: { w: 29, h: 35, px: 10, py: 34 },
+  armL: { w: 28, h: 16, px: 27, py: 1 },
+  armR: { w: 27, h: 9, px: 2, py: 4 },
+  legL: { w: 15, h: 48, px: 12, py: 3 },
+  legR: { w: 17, h: 54, px: 6, py: 3 }
+};
 for (const k of ['head', 'torso', 'armL', 'armR', 'legL', 'legR']) {
   const im = new Image();
-  im.src = 'art/parts/' + k + '.webp';
+  im.src = 'art/pixel/' + k + '.png';
   CUT[k] = im;
 }
-CUTM.head = { w: 428, h: 410, px: 187, py: 384 };
-CUTM.torso = { w: 649, h: 771, px: 233, py: 755 };
-CUTM.armL = { w: 633, h: 359, px: 608, py: 16 };
-CUTM.armR = { w: 590, h: 208, px: 45, py: 83 };
-CUTM.legL = { w: 335, h: 1058, px: 264, py: 65 };
-CUTM.legR = { w: 381, h: 1191, px: 135, py: 65 };
 
 const PART = { body: new Image(), legL: new Image(), legR: new Image() };
 PART.body.src = 'art/frames/rig-body.webp';
@@ -889,13 +895,13 @@ SU_FRAMES.forEach(f => {
 
 // 敌人 / Boss 立绘
 const ENEMY_ART = {
-  grunt:  { src: 'art/enemies/e-0.webp', h: 96 },
-  crawler:{ src: 'art/enemies/e-0.webp', h: 74 },
-  brute:  { src: 'art/enemies/e-3.webp', h: 116 },
-  archer: { src: 'art/enemies/e-1.webp', h: 100 },
-  bomber: { src: 'art/enemies/e-2.webp', h: 88 },
-  shield: { src: 'art/enemies/e-3.webp', h: 112 },
-  shadow: { src: 'art/enemies/e-0.webp', h: 92 }
+  grunt:  { src: 'art/pixel/enemies/e-0.png', h: 74 },
+  crawler:{ src: 'art/pixel/enemies/e-0.png', h: 56 },
+  brute:  { src: 'art/pixel/enemies/e-3.png', h: 92 },
+  archer: { src: 'art/pixel/enemies/e-1.png', h: 78 },
+  bomber: { src: 'art/pixel/enemies/e-2.png', h: 66 },
+  shield: { src: 'art/pixel/enemies/e-3.png', h: 88 },
+  shadow: { src: 'art/pixel/enemies/e-0.png', h: 70 }
 };
 const ENEMY_TINT = {
   grunt: 'rgba(150,168,200,0.46)',
@@ -922,9 +928,9 @@ Object.entries(ENEMY_ART).forEach(([k, a]) => {
   a.img.src = a.src;
 });
 const BOSS_ART = [
-  { src: 'art/boss/b-0.webp', foot: 1.0 },
-  { src: 'art/boss/b-1.webp', foot: 1.0 },
-  { src: 'art/boss/b-2.webp', foot: 1.0 }
+  { src: 'art/pixel/boss/b-0.png', foot: 1.0 },
+  { src: 'art/pixel/boss/b-1.png', foot: 1.0 },
+  { src: 'art/pixel/boss/b-2.png', foot: 1.0 }
 ];
 BOSS_ART.forEach(a => { a.img = new Image(); a.img.src = a.src; });
 
@@ -945,13 +951,11 @@ function drawEnemySprite(e) {
     g.restore();
   }
   g.save();
-  g.globalAlpha = 0.8;
-  g.drawImage(enemyAura, e.x - 96, e.y - 128, 192, 192);
-  g.restore();
-  g.save();
   g.translate(e.x, e.y - (e.z || 0));
   g.scale(e.face * s, s);
+  g.imageSmoothingEnabled = false;
   g.drawImage(img, -iw / 2, -ih);
+  g.imageSmoothingEnabled = true;
   g.restore();
   if (e.hitFlash > 0.35) {
     g.save();
@@ -1310,14 +1314,16 @@ function drawPart(name, angle) {
   g.save();
   g.translate(j[0], j[1]);
   g.rotate(angle || 0);
+  g.imageSmoothingEnabled = false;
   g.drawImage(img, -m.px, -m.py);
+  g.imageSmoothingEnabled = true;
   g.restore();
   return true;
 }
 
 function drawCutoutPlayer() {
   for (const k in CUT) if (!CUT[k].complete || !CUT[k].naturalWidth) return false;
-  const s = (PORTRAIT ? 0.062 : 0.074) * depth(P.y);
+  const s = (PORTRAIT ? 1.5 : 1.7) * depth(P.y);
   const t = P.animT;
   const run = P.run ? 1 : 0;
   const ph = P.runPhase;
@@ -1361,8 +1367,8 @@ function drawCutoutPlayer() {
 
   // 刀尖世界坐标 → 拖尾
   const shx = CUTP.armL[0], shy = CUTP.armL[1];
-  const tipx = shx + Math.cos(armL) * (-580) - Math.sin(armL) * 120;
-  const tipy = shy + Math.sin(armL) * (-580) + Math.cos(armL) * 120;
+  const tipx = shx + Math.cos(armL) * (-26) - Math.sin(armL) * 6;
+  const tipy = shy + Math.sin(armL) * (-26) + Math.cos(armL) * 6;
   for (const q of P.trail) q.life -= 0.016;
   if (P.trail.length > 22) P.trail.shift();
   P.trail = P.trail.filter(q => q.life > 0);
@@ -2779,12 +2785,14 @@ function drawOni(e) {
   else if (e.state === 'break' || e.state === 'roar') bossIdx = 2;
   const bart = BOSS_ART[bossIdx];
   if (bart.img.complete && bart.img.naturalWidth) {
-    const bs = (272 / bart.img.naturalHeight) * depth(e.y);
+    const bs = (230 / bart.img.naturalHeight) * depth(e.y);
     const img = bart.img;
     g.save();
     g.translate(e.x, e.y);
     g.scale(e.face * bs, bs);
+    g.imageSmoothingEnabled = false;
     g.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight * bart.foot);
+    g.imageSmoothingEnabled = true;
     g.restore();
     if (e.hitFlash > 0) {
       g.save();
@@ -3232,6 +3240,15 @@ function render() {
     g.beginPath();
     g.ellipse(d.r * 0.9, d.r * 0.2, d.r * 0.3, d.r * 0.14, 0, 0, TAU);
     g.fill();
+    g.restore();
+  }
+
+  // 敌人光环（先画，避免盖住角色）
+  for (const e of enemies) {
+    if (e.dead) continue;
+    g.save();
+    g.globalAlpha = 0.8;
+    g.drawImage(enemyAura, e.x - 96, e.y - 128, 192, 192);
     g.restore();
   }
 
