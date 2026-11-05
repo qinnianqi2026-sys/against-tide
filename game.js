@@ -598,7 +598,7 @@ groundCanvas.width = WORLD_W; groundCanvas.height = 390;
       const px = x + off;
       b.fillStyle = `rgba(190,210,240,${0.03 + Math.random() * 0.04})`;
       b.fillRect(px + 1, y + 1, 46, 22);
-      b.strokeStyle = `rgba(10,14,22,${0.35 + Math.random() * 0.2})`;
+      b.strokeStyle = `rgba(10,14,22,${0.14 + Math.random() * 0.10})`;
       b.lineWidth = 1;
       b.strokeRect(px + 0.5, y + 0.5, 47, 23);
     }
@@ -606,6 +606,12 @@ groundCanvas.width = WORLD_W; groundCanvas.height = 390;
   for (let i = 0; i < 140; i++) {
     b.fillStyle = `rgba(150,165,195,${0.05 + Math.random() * 0.08})`;
     b.fillRect(Math.random() * WORLD_W, Math.random() * 390, 1 + Math.random() * 2, 1);
+  }
+  // 苔痕与落叶
+  for (let i = 0; i < 46; i++) {
+    const x = Math.random() * WORLD_W, y = 20 + Math.random() * 350, r = 6 + Math.random() * 22;
+    b.fillStyle = `rgba(70,80,55,${0.05 + Math.random() * 0.08})`;
+    b.beginPath(); b.ellipse(x, y, r, r * 0.4, Math.random() * 3, 0, TAU); b.fill();
   }
   const fog = b.createLinearGradient(0, 0, 0, 90);
   fog.addColorStop(0, 'rgba(8,10,18,1)');
@@ -631,7 +637,7 @@ groundDusk.width = WORLD_W; groundDusk.height = 390;
       const px = x + off;
       b.fillStyle = `rgba(255,220,180,${0.03 + Math.random() * 0.04})`;
       b.fillRect(px + 1, y + 1, 46, 22);
-      b.strokeStyle = `rgba(20,12,10,${0.35 + Math.random() * 0.2})`;
+      b.strokeStyle = `rgba(20,12,10,${0.14 + Math.random() * 0.10})`;
       b.lineWidth = 1;
       b.strokeRect(px + 0.5, y + 0.5, 47, 23);
     }
@@ -640,12 +646,47 @@ groundDusk.width = WORLD_W; groundDusk.height = 390;
     b.fillStyle = `rgba(255,210,160,${0.04 + Math.random() * 0.06})`;
     b.fillRect(Math.random() * WORLD_W, Math.random() * 390, 1 + Math.random() * 2, 1);
   }
-  const fog = b.createLinearGradient(0, 0, 0, 90);
+  // 苔痕与落叶
+  for (let i = 0; i < 46; i++) {
+    const x = Math.random() * WORLD_W, y = 20 + Math.random() * 350, r = 6 + Math.random() * 22;
+    b.fillStyle = `rgba(70,80,55,${0.05 + Math.random() * 0.08})`;
+    b.beginPath(); b.ellipse(x, y, r, r * 0.4, Math.random() * 3, 0, TAU); b.fill();
+  }
+    for (let i = 0; i < 70; i++) {
+    const x = Math.random() * WORLD_W, y = 20 + Math.random() * 350, r = 5 + Math.random() * 20;
+    b.fillStyle = `rgba(80,70,50,${0.05 + Math.random() * 0.09})`;
+    b.beginPath(); b.ellipse(x, y, r, r * 0.35, Math.random() * 3, 0, TAU); b.fill();
+  }
+const fog = b.createLinearGradient(0, 0, 0, 90);
   fog.addColorStop(0, 'rgba(32,18,14,0.95)');
   fog.addColorStop(0.5, 'rgba(38,22,18,0.65)');
   fog.addColorStop(1, 'rgba(38,22,18,0)');
   b.fillStyle = fog;
   b.fillRect(0, 0, WORLD_W, 90);
+}
+
+// 前景草丛（屏幕空间，增加纵深）
+const fgGrass = document.createElement('canvas');
+fgGrass.width = 1280; fgGrass.height = 150;
+{
+  const b = fgGrass.getContext('2d');
+  b.clearRect(0, 0, 1280, 150);
+  for (let i = 0; i < 90; i++) {
+    const x = Math.random() * 1280;
+    const hgt = 18 + Math.random() * 46;
+    const lean = (Math.random() - 0.5) * 10;
+    b.strokeStyle = `rgba(10,12,10,${0.55 + Math.random() * 0.35})`;
+    b.lineWidth = 1 + Math.random() * 2;
+    b.beginPath();
+    b.moveTo(x, 150);
+    b.quadraticCurveTo(x + lean * 0.4, 150 - hgt * 0.6, x + lean, 150 - hgt);
+    b.stroke();
+  }
+  for (let i = 0; i < 26; i++) {
+    const x = Math.random() * 1280, y = 128 + Math.random() * 20, r = 3 + Math.random() * 9;
+    b.fillStyle = `rgba(14,14,16,${0.6 + Math.random() * 0.3})`;
+    b.beginPath(); b.ellipse(x, y, r, r * 0.5, 0, 0, TAU); b.fill();
+  }
 }
 
 // 战场地标（随镜头滚动）
@@ -1281,8 +1322,8 @@ for (let i = 1; i <= 4; i++) {
   const b = new Image(); b.src = 'art/pixel/hero/atk-' + i + '.webp'; HERO_FRAMES.atk.push(b);
 }
 const HERO_META = {
-  run: [{ax:157,h:320},{ax:100,h:320},{ax:155,h:320},{ax:144,h:320}],
-  atk: [{ax:99,h:320},{ax:93,h:320},{ax:113,h:320},{ax:129,h:320}]
+  run: [{ax:149,ay:317},{ax:91,ay:317},{ax:146,ay:316},{ax:135,ay:317}],
+  atk: [{ax:63,ay:317},{ax:105,ay:309},{ax:124,ay:309},{ax:89,ay:317}]
 };
 
 const HERO_PIX = document.createElement('canvas');
@@ -1438,7 +1479,7 @@ function drawCutoutPlayer() {
   g.translate(P.x, P.y + bob);
   g.scale(-P.face * s, s);
   g.imageSmoothingEnabled = false;
-  g.drawImage(img, -m.ax, -m.h);
+  g.drawImage(img, -m.ax, -m.ay);
   g.imageSmoothingEnabled = true;
   g.restore();
   return true;
@@ -3507,7 +3548,7 @@ function render() {
   }
 
   if (G.mode === 'title') { drawTitle(); return; }
-  if (G.mode === 'play') drawHUD();
+  if (G.mode === 'play') { g.drawImage(fgGrass, 0, H - 190); drawHUD(); }
   if (IS_TOUCH && G.mode === 'play') drawTouchUI();
   if (G.cutin) drawCutin();
   if (G.fatal) {
