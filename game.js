@@ -28,7 +28,7 @@ function resizeCanvas() {
   if (PORTRAIT) {
     W = 720; H = 1280;
     ARENA.y1 = 420; ARENA.y2 = 1200;
-    CAM.y = 860;
+    CAM.y = 676;
   } else {
     W = Math.round(Math.max(1280, Math.min(1760, 720 * aspect)));
     H = 720;
@@ -624,8 +624,8 @@ const PROPS = [];
   let x = 160;
   while (x < WORLD_W - 120) {
     const r = Math.random();
-    PROPS.push({ x, y: rnd(430, 655), type: r < 0.4 ? 'lantern' : r < 0.72 ? 'banner' : 'rock', s: rnd(0.8, 1.15) });
-    x += rnd(190, 330);
+    PROPS.push({ x, y: PORTRAIT ? rnd(470, 1140) : rnd(430, 655), type: r < 0.4 ? 'lantern' : r < 0.72 ? 'banner' : 'rock', s: rnd(0.8, 1.15) });
+    x += rnd(150, 260);
   }
 }
 
@@ -931,7 +931,7 @@ function drawEnemySprite(e) {
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   if (!iw || !ih) return false;
-  const s = (art.h / ih) * depth(e.y);
+  const s = (art.h / ih) * depth(e.y) * 0.78;
   const k = e.state === 'wind' ? clamp(1 - e.st / (e.kind === 'brute' ? 0.7 : 0.5), 0, 1) : 0;
   if (k > 0) {
     g.save();
@@ -1313,7 +1313,7 @@ function drawPart(name, angle) {
 
 function drawCutoutPlayer() {
   for (const k in CUT) if (!CUT[k].complete || !CUT[k].naturalWidth) return false;
-  const s = 0.092 * depth(P.y);
+  const s = 0.062 * depth(P.y);
   const t = P.animT;
   const run = P.run ? 1 : 0;
   const ph = P.runPhase;
@@ -1557,8 +1557,8 @@ function attack(heavy) {
   }
 
   if (hits > 0) {
-    G.hitstop = heavy ? 0.09 : Math.min(0.07, 0.024 + hits * 0.006);
-    addShake(heavy ? 12 : 4 + Math.min(7, hits * 0.8));
+    G.hitstop = heavy ? 0.11 : Math.min(0.09, 0.045 + hits * 0.008);
+    addShake(heavy ? 15 : 6 + Math.min(9, hits * 0.9));
   }
 
   // 一次斩杀 3 人以上 → 短暂慢镜
@@ -2275,13 +2275,13 @@ function updateStage(dt) {
   if (G.stageKills < st.quota) {
     G.spawnT -= dt;
     const alive = enemies.filter(e => !e.dead).length;
-    if (G.spawnT <= 0 && alive < (G.stage === 1 ? 20 : 24)) {
-      G.spawnT = 0.55 - G.stage * 0.08;
+    if (G.spawnT <= 0 && alive < (G.stage === 1 ? 34 : 40)) {
+      G.spawnT = 0.42 - G.stage * 0.05;
       spawnEnemy(st.pool[Math.floor(Math.random() * st.pool.length)]);
       if (Math.random() < 0.3) spawnEnemy(st.pool[Math.floor(Math.random() * st.pool.length)]);
     }
     G.formT -= dt;
-    if (G.formT <= 0 && alive < 22) {
+    if (G.formT <= 0 && alive < 32) {
       G.formT = 11 - G.stage;
       const dir = Math.random() < 0.5 ? -1 : 1;
       const bx = clamp(P.x + dir * 520, ARENA.x1 + 60, ARENA.x2 - 60);
@@ -2345,7 +2345,7 @@ function update(dt) {
 
   G.runT += dt;
   CAM.x = lerp(CAM.x, clamp(P.x, W / 2, WORLD_W - W / 2), 1 - Math.exp(-5 * dt));
-  CAM.y = PORTRAIT ? 860 : 360;
+  CAM.y = PORTRAIT ? 676 : 360;
   G.hitstop = Math.max(0, G.hitstop - dt);
   G.slowT = Math.max(0, G.slowT - dt);
   G.punch = Math.max(0, G.punch - dt * 7);
@@ -2510,7 +2510,7 @@ function startGame() {
   G.bloodMoon = false; G.ult = null; G.banner = null; G.timeScale = 1;
   G.spawnT = 0.4; G.endT = 0; G.streak = 0;
   P.maxHp = 10;
-  P.x = W / 2; P.y = PORTRAIT ? 800 : 580; CAM.x = W / 2; CAM.y = PORTRAIT ? 860 : 360; P.hp = P.maxHp; P.aim = Math.PI; P.face = 1;
+  P.x = W / 2; P.y = PORTRAIT ? 800 : 580; CAM.x = W / 2; CAM.y = PORTRAIT ? 676 : 360; P.hp = P.maxHp; P.aim = Math.PI; P.face = 1;
   P.attackT = 0; P.dashT = 0; P.dashCd = 0; P.invuln = 1.0; P.hurtT = 0;
   P.dmgBonus = 0; P.speedMul = 1; P.rangeMul = 1; P.dashCdMul = 1; P.ultGainMul = 1;
   P.hasWave = false; P.hasChain = false; P.hasBurn = false; P.hasFrost = false; P.lifesteal = 0; P.chainCd = 0;
@@ -3175,11 +3175,6 @@ function render() {
   // ---- 相机：世界坐标 ----
   g.save();
   g.translate(W / 2 - CAM.x, H / 2 - CAM.y);
-  if (IS_TOUCH) {
-    g.translate(P.x, P.y);
-    g.scale(1.12, 1.12);
-    g.translate(-P.x, -P.y);
-  }
   if (G.punch > 0.001) {
     const pz = 1 + G.punch * 0.05;
     g.translate(P.x, P.y);
@@ -3190,6 +3185,11 @@ function render() {
     g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 420, WORLD_W, 900);
     g.fillStyle = duskScene ? '#1a120f' : '#0e1018';
     g.fillRect(0, 1310, WORLD_W, 400);
+    const hz = g.createLinearGradient(0, 400, 0, 580);
+    hz.addColorStop(0, duskScene ? 'rgba(48,26,24,0.9)' : 'rgba(8,10,18,0.9)');
+    hz.addColorStop(1, duskScene ? 'rgba(48,26,24,0)' : 'rgba(8,10,18,0)');
+    g.fillStyle = hz;
+    g.fillRect(0, 400, WORLD_W, 180);
   }
   else g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 330);
   drawProps();
