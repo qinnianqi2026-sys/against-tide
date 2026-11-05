@@ -1275,6 +1275,16 @@ function drawCutout(aL, aR, lean, bob) {
   return true;
 }
 
+const HERO_FRAMES = { run: [], atk: [] };
+for (let i = 1; i <= 4; i++) {
+  const a = new Image(); a.src = 'art/pixel/hero/run-' + i + '.png'; HERO_FRAMES.run.push(a);
+  const b = new Image(); b.src = 'art/pixel/hero/atk-' + i + '.png'; HERO_FRAMES.atk.push(b);
+}
+const HERO_META = {
+  run: [{ax:418,h:847},{ax:268,h:851},{ax:408,h:837},{ax:384,h:846}],
+  atk: [{ax:290,h:931},{ax:241,h:815},{ax:281,h:789},{ax:335,h:825}]
+};
+
 const HERO_PIX = document.createElement('canvas');
 HERO_PIX.width = 96; HERO_PIX.height = 120;
 const hp = HERO_PIX.getContext('2d');
@@ -1408,67 +1418,27 @@ function drawPixelHero(pose) {
 }
 
 function drawCutoutPlayer() {
-  const t = P.animT;
-  const run = P.run ? 1 : 0;
-  const ph = P.runPhase;
-  const swinging = P.attackT > 0;
-  const k = swinging ? 1 - P.attackT / P.attackDur : 0;
-  const hurt = P.hurtT > 0.2;
-  const dodge = P.state === 'dodge';
-
-  const pose = { bob: 0, step: 0, lean: 0, armF: 0.25, armB: -0.2, legF: 0.06, legB: -0.06, shinF: 0, shinB: 0, sword: 0.5, scarf: 0 };
-  if (hurt) { pose.lean = -0.25; pose.armF = 0.9; pose.armB = 0.5; }
-  else if (dodge) { pose.lean = -0.2; pose.armF = 0.7; pose.armB = 0.9; }
-  else if (swinging) {
-    if (k < 0.24) {
-      const e = k / 0.24;
-      pose.armF = 0.25 + (-2.3 - 0.25) * e;
-      pose.sword = 0.5 + (-1.6 - 0.5) * e;
-      pose.lean = -0.06 * e;
-    } else if (k < 0.58) {
-      const e = (k - 0.24) / 0.34;
-      pose.armF = -2.3 + (0.9 + 2.3) * e;
-      pose.sword = -1.6 + (0.9 + 1.6) * e;
-      pose.lean = 0.18;
-      pose.step = 2 * Math.sin(e * Math.PI);
-    } else {
-      const e = (k - 0.58) / 0.42;
-      pose.armF = 0.9 + (0.25 - 0.9) * e;
-      pose.sword = 0.9 + (0.5 - 0.9) * e;
-      pose.lean = 0.12 * (1 - e);
-    }
-  } else if (run) {
-    pose.lean = 0.14;
-    pose.legF = Math.sin(ph) * 0.7;
-    pose.legB = -Math.sin(ph) * 0.7;
-    pose.shinF = Math.max(0, -Math.sin(ph)) * 0.7;
-    pose.shinB = Math.max(0, Math.sin(ph)) * 0.7;
-    pose.armF = 0.25 - 0.45 * Math.sin(ph);
-    pose.armB = -0.2 + 0.5 * Math.sin(ph);
-    pose.bob = -Math.abs(Math.sin(ph * 2)) * 2;
-    pose.scarf = 2 + Math.sin(ph) * 2;
-  } else {
-    pose.bob = Math.sin(t * 1.8) * 1;
-    pose.armF = 0.25 + Math.sin(t * 1.3) * 0.03;
-    pose.scarf = Math.sin(t * 1.5) * 1.5;
+  let set = 'atk', idx = 3, bob = Math.sin(P.animT * 1.8) * 1.2;
+  if (P.hurtT > 0.2) { set = 'atk'; idx = 2; }
+  else if (P.state === 'dodge') { set = 'run'; idx = 1; }
+  else if (P.attackT > 0) {
+    const k = 1 - P.attackT / P.attackDur;
+    set = 'atk';
+    idx = Math.min(3, Math.floor(k * 4));
+  } else if (P.run) {
+    set = 'run';
+    idx = Math.floor(P.runPhase / (Math.PI / 2)) % 4;
+    bob = -Math.abs(Math.sin(P.runPhase * 2)) * 1.5;
   }
-
-  const tip = drawPixelHero(pose);
-  const s = (PORTRAIT ? 1.6 : 1.8) * depth(P.y);
-  // 刀尖改为世界坐标（用于拖尾）
-  const tipWX = P.x + P.face * s * (tip.tipX - 48);
-  const tipWY = P.y + s * (tip.tipY - 112);
-  for (const q of P.trail) q.life -= 0.016;
-  if (P.trail.length > 22) P.trail.shift();
-  P.trail = P.trail.filter(q => q.life > 0);
-  if (swinging) P.trail.push({ x: tipWX, y: tipWY, life: 0.16 });
-  if (P.trail.length > 1) drawBladeTrail();
-
+  const img = HERO_FRAMES[set][idx];
+  const m = HERO_META[set][idx];
+  if (!img || !img.complete || !img.naturalWidth) return false;
+  const s = (PORTRAIT ? 0.17 : 0.19) * depth(P.y);
   g.save();
-  g.translate(P.x, P.y);
-  g.scale(P.face * s, s);
+  g.translate(P.x, P.y + bob);
+  g.scale(-P.face * s, s);
   g.imageSmoothingEnabled = false;
-  g.drawImage(HERO_PIX, -48, -112);
+  g.drawImage(img, -m.ax, -m.h);
   g.imageSmoothingEnabled = true;
   g.restore();
   return true;
@@ -3264,11 +3234,20 @@ function render() {
     const bx = (W - bw) / 2, by = H - bh;
     if (duskScene) {
       if (PORTRAIT) {
-        const sc = Math.max(W / 1280, H / 720);
-        const dw = 1280 * sc, dh = 720 * sc;
-        g.drawImage(bgD, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        const bw2 = W * 1.2, bh2 = bw2 * 720 / 1280;
+        const px = clamp(-(CAM.x - 640) * 0.12, -60, 60);
+        const bx2 = (W - bw2) / 2 + px;
+        const horizon = 420 - (CAM.y - H / 2);
+        const by2 = horizon - bh2 * 0.58;
+        g.drawImage(bgD, bx2, by2, bw2, bh2);
+        const sky = g.createLinearGradient(0, 0, 0, by2 + 90);
+        sky.addColorStop(0, '#0e0c18');
+        sky.addColorStop(1, 'rgba(14,12,24,0)');
+        g.fillStyle = sky;
+        g.fillRect(0, 0, W, by2 + 90);
       } else {
-        g.drawImage(bgD, bx, by, bw, bh);
+        const px = clamp(-(CAM.x - 640) * 0.06, -40, 40);
+        g.drawImage(bgD, bx + px, by, bw, bh);
       }
       g.drawImage(overlayDusk, 0, 0, W, H);
     } else {
@@ -3350,7 +3329,7 @@ function render() {
     g.restore();
 
     if (e === P) {
-      g.drawImage(auraCanvas, P.x - 128, P.y - 180, 256, 256);
+      g.drawImage(auraCanvas, P.x - 110, P.y - 150, 220, 220);
       g.strokeStyle = 'rgba(150,230,255,0.28)';
       g.lineWidth = 1.5;
       g.beginPath();
@@ -3643,7 +3622,7 @@ function drawHUD() {
   g.textAlign = 'center';
   if (G.stage < BOSS_STAGE) {
     const st = STAGES[G.stage - 1];
-    text(st.title, W / 2, PORTRAIT ? 68 : 44, { size: 12, color: 'rgba(200,215,240,0.82)', align: 'center', spacing: 5 });
+    text(st.title, W / 2, PORTRAIT ? 68 : 44, { size: 15, color: 'rgba(200,215,240,0.82)', align: 'center', spacing: 5 });
     const bw = 280, bx = W / 2 - bw / 2, by = PORTRAIT ? 90 : 56;
     g.fillStyle = 'rgba(6,8,14,0.72)';
     roundRect(bx, by, bw, 4, 2); g.fill();
@@ -3651,7 +3630,7 @@ function drawHUD() {
     g.shadowColor = '#ff5f70'; g.shadowBlur = 8;
     roundRect(bx, by, bw * clamp(G.stageKills / st.quota, 0, 1), 4, 2); g.fill();
     g.shadowBlur = 0;
-    text(`斩 ${G.stageKills} / ${st.quota}`, W / 2, PORTRAIT ? 114 : 80, { size: 10, color: 'rgba(170,190,220,0.6)', align: 'center', spacing: 3 });
+    text(`斩 ${G.stageKills} / ${st.quota}`, W / 2, PORTRAIT ? 114 : 80, { size: 13, color: 'rgba(170,190,220,0.6)', align: 'center', spacing: 3 });
   } else {
     const boss = enemies.find(e => e.kind === 'oni' && !e.dead);
     text('鬼 武 者', W / 2, 40, { size: 13, color: '#ff9aa4', align: 'center', spacing: 7, glow: 12 });
@@ -3682,11 +3661,11 @@ function drawHUD() {
   g.save();
   g.textAlign = 'right';
   const sy = (IS_TOUCH ? 30 : 0) + (PORTRAIT ? 40 : 0);
-  text('SCORE', W - 54, 46 + sy, { size: 10, color: 'rgba(160,180,215,0.55)', align: 'right', spacing: 4 });
-  text(String(G.score).padStart(7, '0'), W - 54, 80 + sy, { size: 28, family: F_NUM, weight: 700, color: '#eef2fb', align: 'right' });
-  text(`BEST ${String(G.best).padStart(7, '0')}`, W - 54, 102 + sy, { size: 9, color: 'rgba(160,180,215,0.35)', align: 'right', spacing: 2 });
+  text('SCORE', W - 54, 46 + sy, { size: 12, color: 'rgba(160,180,215,0.55)', align: 'right', spacing: 4 });
+  text(String(G.score).padStart(7, '0'), W - 54, 80 + sy, { size: 32, family: F_NUM, weight: 700, color: '#eef2fb', align: 'right' });
+  text(`BEST ${String(G.best).padStart(7, '0')}`, W - 54, 102 + sy, { size: 11, color: 'rgba(160,180,215,0.35)', align: 'right', spacing: 2 });
   const tm = Math.floor(G.runT / 60), ts = Math.floor(G.runT % 60);
-  text(`${tm}:${String(ts).padStart(2, '0')}`, W - 54, 124 + sy, { size: 12, family: F_NUM, color: 'rgba(200,215,240,0.55)', align: 'right', spacing: 2 });
+  text(`${tm}:${String(ts).padStart(2, '0')}`, W - 54, 124 + sy, { size: 15, family: F_NUM, color: 'rgba(200,215,240,0.55)', align: 'right', spacing: 2 });
   g.restore();
 
   // 连击 + 评级
@@ -3720,12 +3699,12 @@ function drawHUD() {
     g.fillRect(x, y, 16, 6);
     g.shadowBlur = 0;
   }
-  text(String(P.hp), 168, PORTRAIT ? 108 : 92, { size: 12, color: 'rgba(200,215,240,0.5)' });
+  text(String(P.hp), 168, PORTRAIT ? 108 : 92, { size: 14, color: 'rgba(200,215,240,0.5)' });
   // 兵刃
-  if (G.weaponName) text('兵 刃 · ' + G.weaponName, 40, PORTRAIT ? 132 : 112, { size: 10, color: '#bfe8ff', spacing: 2 });
+  if (G.weaponName) text('兵 刃 · ' + G.weaponName, 40, PORTRAIT ? 132 : 112, { size: 12, color: '#bfe8ff', spacing: 2 });
   // 天赋
   if (G.talentName) {
-    text('天 赋 · ' + G.talentName, 40, PORTRAIT ? 148 : 128, { size: 10, color: '#ffd98a', spacing: 2 });
+    text('天 赋 · ' + G.talentName, 40, PORTRAIT ? 148 : 128, { size: 12, color: '#ffd98a', spacing: 2 });
   }
   // 已获得特性
   let tx = 40, ty = (G.talentName ? 150 : 130) + (PORTRAIT ? 20 : 0);
@@ -3734,13 +3713,13 @@ function drawHUD() {
     const u = UPGRADES.find(x => x.id === id);
     if (!u) continue;
     const label = u.name.replace(/\s/g, '');
-    g.font = `600 10px ${F_SANS}`;
-    const tw = g.measureText(label).width + 14;
+    g.font = `600 12px ${F_SANS}`;
+    const tw = g.measureText(label).width + 16;
     g.fillStyle = u.badge ? 'rgba(255,190,80,0.16)' : 'rgba(255,255,255,0.06)';
     roundRect(tx, ty - 9, tw, 16, 8);
     g.fill();
     g.fillStyle = u.badge ? '#ffd98a' : 'rgba(200,215,240,0.8)';
-    g.fillText(label, tx + 7, ty + 2);
+    g.fillText(label, tx + 8, ty + 3);
     tx += tw + 6;
     if (tx > 320) { tx = 40; ty += 20; }
   }
@@ -3767,10 +3746,10 @@ function drawHUD() {
     roundRect(W / 2 - 210, PORTRAIT ? H - 420 : 596, 420, 40, 20);
     g.fill();
     g.textAlign = 'center';
-    g.font = `600 14px ${F_SANS}`;
+    g.font = `600 16px ${F_SANS}`;
     g.letterSpacing = '2px';
     g.fillStyle = '#ffe8eb';
-    g.fillText(msgs[step], W / 2, (PORTRAIT ? H - 420 : 596) + 25);
+    g.fillText(msgs[step], W / 2, (PORTRAIT ? H - 420 : 596) + 26);
     g.restore();
   }
 
@@ -3812,7 +3791,7 @@ function drawHUD() {
     g.save();
     g.globalAlpha = Math.min(0.42, (12 - G.t) * 0.1);
     text(IS_TOUCH ? '左侧拖动移动    右侧斩 / 闪 / 名册' : 'WASD 移动    J 斩（按住蓄力）    K 闪身 / 见切    E 名册',
-      W / 2, PORTRAIT ? H - 14 : 706, { size: 10, color: '#dfe8ff', align: 'center', spacing: 2 });
+      W / 2, PORTRAIT ? H - 14 : 706, { size: 12, color: '#dfe8ff', align: 'center', spacing: 2 });
     g.restore();
   }
 
@@ -3868,22 +3847,12 @@ function drawTitlePortrait() {
   g.fillStyle = 'rgba(6,6,10,0.55)';
   g.fillRect(0, 0, W, H);
   g.textAlign = 'center';
-  text('斩 名 录', W / 2, 196, { size: 76, family: F_SERIF, weight: 700, color: '#f2f5fc', align: 'center', spacing: 14, glow: 30, glowColor: 'rgba(255,70,90,0.45)' });
-  text('T H E   N A M E   B L A D E', W / 2, 240, { size: 10, color: 'rgba(170,190,220,0.7)', align: 'center', spacing: 5 });
+  text('斩 名 录', W / 2, 210, { size: 104, family: F_SERIF, weight: 700, color: '#f2f5fc', align: 'center', spacing: 14, glow: 30, glowColor: 'rgba(255,70,90,0.45)' });
+  text('T H E   N A M E   B L A D E', W / 2, 266, { size: 13, color: 'rgba(170,190,220,0.7)', align: 'center', spacing: 5 });
 
-  const card = IMG.card.complete && IMG.card.naturalWidth ? IMG.card : IMG.su;
-  if (card.complete && card.naturalWidth) {
-    const cw = 340, ch = 453, x = (W - cw) / 2, y = 286;
-    g.save();
-    g.shadowColor = 'rgba(0,0,0,0.7)';
-    g.shadowBlur = 34;
-    g.drawImage(card, x, y, cw, ch);
-    g.restore();
-    text('SU  /  19  /  被逐出师门', W / 2, y + ch + 30, { size: 9, color: 'rgba(200,212,238,0.55)', align: 'center', spacing: 3 });
-  }
-
-  text('三阵。', W / 2, 836, { size: 17, family: F_SERIF, color: 'rgba(225,232,248,0.9)', align: 'center', spacing: 2 });
-  text('走到鬼武者面前，然后斩了他。', W / 2, 872, { size: 15, family: F_SERIF, color: 'rgba(225,232,248,0.72)', align: 'center', spacing: 2 });
+  text('溯 · 十九 · 被逐出师门的剑客', W / 2, 388, { size: 15, family: F_SERIF, color: 'rgba(220,228,245,0.72)', align: 'center', spacing: 3 });
+  text('三阵。', W / 2, 500, { size: 26, family: F_SERIF, color: 'rgba(238,242,252,0.95)', align: 'center', spacing: 3 });
+  text('走到鬼武者面前，然后斩了他。', W / 2, 552, { size: 22, family: F_SERIF, color: 'rgba(225,232,248,0.8)', align: 'center', spacing: 2 });
 
   const rows = IS_TOUCH ? [
     ['左侧', '拖动移动'],
@@ -3897,19 +3866,19 @@ function drawTitlePortrait() {
     ['E', '名册 · 满槽清场']
   ];
   rows.forEach((r, i) => {
-    const y = 950 + i * 44;
+    const y = 900 + i * 52;
     g.save();
     g.fillStyle = 'rgba(255,255,255,0.06)';
     roundRect(W / 2 - 110, y - 16, 58, 24, 4); g.fill();
     g.strokeStyle = 'rgba(255,120,135,0.25)'; g.lineWidth = 1;
     roundRect(W / 2 - 110, y - 16, 58, 24, 4); g.stroke();
-    text(r[0], W / 2 - 81, y + 1, { size: 10, color: '#ffb8c0', align: 'center', spacing: 1 });
-    text(r[1], W / 2 - 38, y + 1, { size: 13, color: 'rgba(210,222,245,0.78)' });
+    text(r[0], W / 2 - 81, y + 1, { size: 12, color: '#ffb8c0', align: 'center', spacing: 1 });
+    text(r[1], W / 2 - 34, y + 1, { size: 15, color: 'rgba(210,222,245,0.78)' });
     g.restore();
   });
 
   if (G.best > 0) text('BEST  ' + String(G.best).padStart(7, '0'), W / 2, 1160, { size: 10, color: 'rgba(200,212,238,0.5)', align: 'center', spacing: 3 });
-  text(IS_TOUCH ? '点 击 屏 幕 开 始' : '单 击  或  按 任 意 键  开 始', W / 2, 1214, { size: 13, color: '#ffe8eb', align: 'center', spacing: 6, glow: 12 });
+  text(IS_TOUCH ? '点 击 屏 幕 开 始' : '单 击  或  按 任 意 键  开 始', W / 2, 1216, { size: 16, color: '#ffe8eb', align: 'center', spacing: 6, glow: 12 });
   g.restore();
 }
 
@@ -3917,17 +3886,7 @@ function drawTitle() {
   if (PORTRAIT) { drawTitlePortrait(); return; }
   const t = G.t;
   // 主角立绘卡
-  const card = IMG.card.complete && IMG.card.naturalWidth ? IMG.card : IMG.su;
-  if (card.complete && card.naturalWidth) {
-    const cw = 392, ch = 523;
-    const x = 808, y = 100;
-    g.save();
-    g.shadowColor = 'rgba(0,0,0,0.65)';
-    g.shadowBlur = 30;
-    g.drawImage(card, x, y, cw, ch);
-    g.restore();
-    text('SU  /  19  /  被逐出师门', x + cw, y + ch + 30, { size: 10, color: 'rgba(200,212,238,0.55)', align: 'right', spacing: 3 });
-  }
+  // 首页不再贴立绘卡
 
   // 左侧暗角
   const grad = g.createLinearGradient(0, 0, 820, 0);
