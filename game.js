@@ -122,6 +122,10 @@ const SFX = {
     tone(190, 0.12, { type: 'square', vol: 0.05, to: 90 });
     tone(90, 0.16, { type: 'sine', vol: 0.16, to: 50 });
   },
+  thump(v = 1) {
+    tone(62, 0.14, { type: 'sine', vol: 0.2 * v, to: 36 });
+    noiseHit(0.12, 0.16 * v, 300, 'lowpass', 0, 0.8);
+  },
   kill() {
     noiseHit(0.16, 0.20, 500, 'lowpass', 0, 0.7);
     tone(140, 0.20, { type: 'sine', vol: 0.12, to: 60 });
@@ -1313,7 +1317,7 @@ function drawPart(name, angle) {
 
 function drawCutoutPlayer() {
   for (const k in CUT) if (!CUT[k].complete || !CUT[k].naturalWidth) return false;
-  const s = 0.062 * depth(P.y);
+  const s = (PORTRAIT ? 0.062 : 0.074) * depth(P.y);
   const t = P.animT;
   const run = P.run ? 1 : 0;
   const ph = P.runPhase;
@@ -1372,10 +1376,13 @@ function drawCutoutPlayer() {
   g.scale(P.face * s, s);
   drawPart('legR', legR);
   drawPart('legL', legL);
+  g.save();
+  g.rotate(lean);
+  drawPart('torso', 0);
   drawPart('armR', armR);
-  drawPart('torso', lean);
-  drawPart('head', lean * 0.4 + head);
+  drawPart('head', head);
   drawPart('armL', armL);
+  g.restore();
   g.restore();
   return true;
 }
@@ -1530,6 +1537,11 @@ function attack(heavy) {
     SFX.slash();
   }
 
+  // 伤害延迟到刀锋接触帧结算
+  P.pendingHit = { t: heavy ? 0.14 : 0.06, range, half, dmg, launch, heavy, step };
+}
+
+function resolveHit(h) {
   if (P.hasWave) {
     waves.push({ x: P.x, y: P.y - 46, ang: P.aim, t: 0 });
     if (P.splitWave) {
@@ -1543,25 +1555,26 @@ function attack(heavy) {
     if (e.dead) continue;
     const dx = e.x - P.x, dy = (e.y - P.y) * 1.25;
     const d = Math.hypot(dx, dy);
-    if (d > range + e.r) continue;
-    if (Math.abs(angDiff(Math.atan2(dy, dx), P.aim)) > half) continue;
-    hitEnemy(e, dmg, Math.atan2(dy, dx), launch);
+    if (d > h.range + e.r) continue;
+    if (Math.abs(angDiff(Math.atan2(dy, dx), P.aim)) > h.half) continue;
+    hitEnemy(e, h.dmg, Math.atan2(dy, dx), h.launch);
     hits++;
   }
 
-  if (heavy) {
-    slashFx(P.x, P.y, P.aim, range, half, '#ffd0d6', 0.34, 16);
-    slashFx(P.x, P.y, P.aim, range * 0.8, half * 0.9, '#ffffff', 0.24, 7);
+  if (h.heavy) {
+    slashFx(P.x, P.y, P.aim, h.range, h.half, '#ffd0d6', 0.34, 16);
+    slashFx(P.x, P.y, P.aim, h.range * 0.8, h.half * 0.9, '#ffffff', 0.24, 7);
+    addFlash('#ffffff', 0.08);
   } else {
-    slashFx(P.x, P.y, P.aim, range, half, step === 2 ? '#ffd0d6' : '#e8f4ff', 0.22, step === 2 ? 12 : 7);
+    slashFx(P.x, P.y, P.aim, h.range, h.half, h.step === 2 ? '#ffd0d6' : '#e8f4ff', 0.22, h.step === 2 ? 12 : 7);
   }
 
   if (hits > 0) {
-    G.hitstop = heavy ? 0.11 : Math.min(0.09, 0.045 + hits * 0.008);
-    addShake(heavy ? 15 : 6 + Math.min(9, hits * 0.9));
+    SFX.thump(Math.min(1.4, 0.8 + hits * 0.12));
+    G.hitstop = h.heavy ? 0.11 : Math.min(0.09, 0.045 + hits * 0.008);
+    addShake(h.heavy ? 15 : 6 + Math.min(9, hits * 0.9));
   }
 
-  // 一次斩杀 3 人以上 → 短暂慢镜
   if (G.kills - beforeKills >= 3) {
     G.slowT = 0.32;
     G.punch = Math.max(G.punch, 0.55);
@@ -1714,11 +1727,13 @@ function hurtPlayer(dmg = 1) {
   sparks(P.x, P.y - 50, 16, '#ff4d63', 320);
   floatText('-1', P.x, P.y - 90, '#ff6070', 20);
   SFX.hurt();
+  P.pendingHit = null;
   if (P.hp <= 0) { P.hp = 0; endGame(); }
 }
 
 function dash() {
   if (P.dashCd > 0 || P.dashT > 0) return;
+  P.pendingHit = null;
   P.holding = false; P.charged = false;
   let perfect = null;
   for (const e of enemies) {
@@ -2378,6 +2393,14 @@ function updatePlayer(dt) {
     P.buffer = 0;
     attack(b === 2);
   }
+  if (P.pendingHit) {
+    P.pendingHit.t -= dt;
+    if (P.pendingHit.t <= 0) {
+      const h = P.pendingHit;
+      P.pendingHit = null;
+      resolveHit(h);
+    }
+  }
   P.chainCd = Math.max(0, P.chainCd - dt);
   P.dashT = Math.max(0, P.dashT - dt);
   P.dashCd = Math.max(0, P.dashCd - dt);
@@ -2515,6 +2538,7 @@ function startGame() {
   P.dmgBonus = 0; P.speedMul = 1; P.rangeMul = 1; P.dashCdMul = 1; P.ultGainMul = 1;
   P.hasWave = false; P.hasChain = false; P.hasBurn = false; P.hasFrost = false; P.lifesteal = 0; P.chainCd = 0;
   P.firestorm = false; P.iceblade = false; P.splitWave = false; P.shatter = false; P.bloodburn = false;
+  P.pendingHit = null;
   P.parryWin = 1; P.hasWave = false; P.hasBurn = false; P.hasFrost = false; P.hasChain = false;
   P.dmgBonus = 0; P.dashCdMul = 1;
   enemies.length = 0; projectiles.length = 0; parts.length = 0; slashes.length = 0; texts.length = 0;
