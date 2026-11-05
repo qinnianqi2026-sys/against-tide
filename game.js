@@ -3778,11 +3778,11 @@ function drawTitlePortrait() {
     const y = 950 + i * 44;
     g.save();
     g.fillStyle = 'rgba(255,255,255,0.06)';
-    roundRect(W / 2 - 150, y - 16, 58, 24, 4); g.fill();
+    roundRect(W / 2 - 110, y - 16, 58, 24, 4); g.fill();
     g.strokeStyle = 'rgba(255,120,135,0.25)'; g.lineWidth = 1;
-    roundRect(W / 2 - 150, y - 16, 58, 24, 4); g.stroke();
-    text(r[0], W / 2 - 121, y + 1, { size: 10, color: '#ffb8c0', align: 'center', spacing: 1 });
-    text(r[1], W / 2 - 78, y + 1, { size: 13, color: 'rgba(210,222,245,0.78)' });
+    roundRect(W / 2 - 110, y - 16, 58, 24, 4); g.stroke();
+    text(r[0], W / 2 - 81, y + 1, { size: 10, color: '#ffb8c0', align: 'center', spacing: 1 });
+    text(r[1], W / 2 - 38, y + 1, { size: 13, color: 'rgba(210,222,245,0.78)' });
     g.restore();
   });
 
@@ -3923,8 +3923,9 @@ function drawCutin() {
 
 function cardRects() {
   if (PORTRAIT) {
-    const cw = 470, ch = 150, x = (W - cw) / 2;
-    return [0, 1, 2].map(i => ({ x, y: 300 + i * 170, w: cw, h: ch }));
+    const cw = 470, ch = 150, gap = 20, x = (W - cw) / 2;
+    const y0 = (H - (ch * 3 + gap * 2)) / 2 + 30;
+    return [0, 1, 2].map(i => ({ x, y: y0 + i * (ch + gap), w: cw, h: ch }));
   }
   const cw = 300, ch = 260, gap = 32, x0 = (W - (cw * 3 + gap * 2)) / 2;
   return [0, 1, 2].map(i => ({ x: x0 + i * (cw + gap), y: 260, w: cw, h: ch }));
@@ -4104,7 +4105,7 @@ function buildShareCanvas() {
   x.lineWidth = 8;
   x.beginPath(); x.moveTo(-80, 800); x.lineTo(cw + 80, 440); x.stroke();
 
-  if (IMG.cutin.complete && IMG.cutin.naturalWidth) {
+  if (location.protocol !== 'file:' && IMG.cutin.complete && IMG.cutin.naturalWidth) {
     const bandY = 250, bandH = 610;
     const k = Math.max(cw / IMG.cutin.naturalWidth, bandH / IMG.cutin.naturalHeight);
     const dw = IMG.cutin.naturalWidth * k, dh = IMG.cutin.naturalHeight * k;
@@ -4117,6 +4118,14 @@ function buildShareCanvas() {
     f.addColorStop(1, 'rgba(8,6,10,0.94)');
     x.fillStyle = f;
     x.fillRect(0, bandY + bandH - 190, cw, 190);
+  } else {
+    x.fillStyle = '#120d18';
+    x.fillRect(0, 250, cw, 610);
+    x.textAlign = 'center';
+    x.font = '700 220px "Songti SC", serif';
+    x.fillStyle = 'rgba(255,255,255,0.08)';
+    x.fillText('斩', cw / 2, 700);
+    x.textAlign = 'left';
   }
 
   x.textAlign = 'left';
