@@ -1,5 +1,5 @@
 /* =========================================================
-   逆潮 / AGAINST THE TIDE —— 30 秒割草切片
+   斩名录 / THE NAME BLADE —— 30 秒割草切片
    操作：WASD 移动 · J 斩 · K 闪身斩 · E 名册（满槽）· R 重来
    ========================================================= */
 (() => {
@@ -2015,25 +2015,25 @@ const STAGES = [
 ];
 
 const TALENTS = [
-  { id: 't_wave', name: '剑 心', desc: '开局自带「剑气」', apply() { P.hasWave = true; } },
-  { id: 't_burn', name: '业 火', desc: '开局自带「焚身」', apply() { P.hasBurn = true; } },
-  { id: 't_frost', name: '霜 心', desc: '开局自带「霜刃」', apply() { P.hasFrost = true; } },
-  { id: 't_chain', name: '雷 引', desc: '开局自带「连锁雷」', apply() { P.hasChain = true; } },
-  { id: 't_dash', name: '疾 影', desc: '闪避冷却 -35%，见切窗口 +25%', apply() { P.dashCdMul = 0.65; P.parryWin = 1.25; } },
-  { id: 't_blood', name: '血 契', desc: '攻击 +2，最大生命 -2', apply() { P.dmgBonus += 2; P.maxHp = Math.max(4, P.maxHp - 2); P.hp = P.maxHp; } }
+  { id: 't_wave', name: '开 卷', desc: '开局自带「墨痕」', apply() { P.hasWave = true; } },
+  { id: 't_burn', name: '引 火', desc: '开局自带「焚名」', apply() { P.hasBurn = true; } },
+  { id: 't_frost', name: '凝 霜', desc: '开局自带「霜印」', apply() { P.hasFrost = true; } },
+  { id: 't_chain', name: '听 雷', desc: '开局自带「回响」', apply() { P.hasChain = true; } },
+  { id: 't_dash', name: '踏 影', desc: '闪避冷却 -35%，见切窗口 +25%', apply() { P.dashCdMul = 0.65; P.parryWin = 1.25; } },
+  { id: 't_blood', name: '血 誓', desc: '攻击 +2，最大生命 -2', apply() { P.dmgBonus += 2; P.maxHp = Math.max(4, P.maxHp - 2); P.hp = P.maxHp; } }
 ];
 
 const UPGRADES = [
-  { id: 'wave', name: '剑 气', desc: '每段斩击飞出一道刀气', apply() { P.hasWave = true; } },
-  { id: 'burn', name: '焚 身', desc: '命中燃烧，死亡爆炸', apply() { P.hasBurn = true; } },
-  { id: 'chain', name: '连 锁 雷', desc: '命中弹射附近 2 人', apply() { P.hasChain = true; } },
-  { id: 'frost', name: '霜 刃', desc: '命中减速 55%', apply() { P.hasFrost = true; } },
-  { id: 'soul', name: '吸 魂', desc: '击杀回复生命', apply() { P.lifesteal += 0.4; } },
-  { id: 'firestorm', name: '雷 火', badge: '组合', req: () => P.hasBurn && P.hasChain, desc: '电弧附带燃烧，点燃成片', apply() { P.firestorm = true; } },
-  { id: 'iceblade', name: '冰 刃', badge: '组合', req: () => P.hasFrost && P.hasWave, desc: '刀气附带霜冻，成片减速', apply() { P.iceblade = true; } },
-  { id: 'split', name: '裂 空', badge: '组合', req: () => P.hasWave, desc: '刀气一分为三', apply() { P.splitWave = true; } },
-  { id: 'shatter', name: '碎 冰', badge: '组合', req: () => P.hasFrost, desc: '对减速目标伤害 +60%，击杀碎冰爆炸', apply() { P.shatter = true; } },
-  { id: 'bloodburn', name: '血 燃', badge: '组合', req: () => P.hasBurn && P.lifesteal > 0, desc: '燃烧伤害转化为治疗', apply() { P.bloodburn = true; } }
+  { id: 'wave', name: '墨 痕', desc: '刀气凝成一道墨痕，贯穿前方', apply() { P.hasWave = true; } },
+  { id: 'burn', name: '焚 名', desc: '被斩中的名字烧起来，死后炸开', apply() { P.hasBurn = true; } },
+  { id: 'chain', name: '回 响', desc: '刀声在敌群里回响，波及两人', apply() { P.hasChain = true; } },
+  { id: 'frost', name: '霜 印', desc: '命中留下霜印，行动迟滞', apply() { P.hasFrost = true; } },
+  { id: 'soul', name: '归 名', desc: '斩落的名字回到刀上，回复生命', apply() { P.lifesteal += 0.4; } },
+  { id: 'firestorm', name: '焚 响', badge: '相生', req: () => P.hasBurn && P.hasChain, desc: '回响带上火，一点燃成一片', apply() { P.firestorm = true; } },
+  { id: 'iceblade', name: '霜 墨', badge: '相生', req: () => P.hasFrost && P.hasWave, desc: '墨痕所过之处，尽数结霜', apply() { P.iceblade = true; } },
+  { id: 'split', name: '分 墨', badge: '相生', req: () => P.hasWave, desc: '一道墨痕，裂成三道', apply() { P.splitWave = true; } },
+  { id: 'shatter', name: '碎 印', badge: '相生', req: () => P.hasFrost, desc: '对霜印目标伤害大增，击杀碎成冰屑', apply() { P.shatter = true; } },
+  { id: 'bloodburn', name: '名 烬', badge: '相生', req: () => P.hasBurn && P.lifesteal > 0, desc: '燃烧的名字，化为你的生命', apply() { P.bloodburn = true; } }
 ];
 
 function offerTalent() {
@@ -3590,7 +3590,7 @@ function drawTitle() {
   g.shadowBlur = 0;
 
   text('A G A I N S T   T H E   T I D E', 148, 194, { size: 11, color: 'rgba(170,190,220,0.7)', spacing: 6 });
-  text('逆潮', 144, 300, { size: 100, family: F_SERIF, weight: 700, color: '#f2f5fc', spacing: 12, glow: 30, glowColor: 'rgba(255,70,90,0.45)' });
+  text('斩名录', 144, 300, { size: 100, family: F_SERIF, weight: 700, color: '#f2f5fc', spacing: 12, glow: 30, glowColor: 'rgba(255,70,90,0.45)' });
   text('溯 · 十 九 · 被 逐 出 师 门 的 剑 客', 150, 370, { size: 13, color: 'rgba(200,215,240,0.8)', spacing: 3 });
 
   text('三阵。', 150, 420, { size: 18, family: F_SERIF, color: 'rgba(225,232,248,0.85)', spacing: 3 });
@@ -3725,7 +3725,7 @@ function drawCards(title, sub, cards) {
       g.font = `700 11px ${F_SANS}`;
       g.letterSpacing = '4px';
       g.fillStyle = '#ffc25a';
-      g.fillText('组 合', x + cw / 2, y + 46);
+      g.fillText('相 生', x + cw / 2, y + 46);
     }
     g.font = `700 26px ${F_SERIF}`;
     g.letterSpacing = '6px';
@@ -3757,11 +3757,11 @@ function pauseAction(i) {
   }
 }
 function drawUpgrade() {
-  drawCards('斩 获', '选 一 个 强 化   ·   按 1 / 2 / 3', G.upgrade.opts);
+  drawCards('刻 名', '从斩落的名字里，刻下一个   ·   按 1 / 2 / 3', G.upgrade.opts);
 }
 
 function drawTalent() {
-  drawCards('择 天 赋', '选 一 个 开 局 天 赋   ·   按 1 / 2 / 3', G.talent.opts);
+  drawCards('开 卷', '选 一 个 开 局 天 赋   ·   按 1 / 2 / 3', G.talent.opts);
 }
 
 function drawPause() {
@@ -3848,7 +3848,7 @@ function buildShareCanvas() {
   x.fillStyle = '#f7f3ef';
   x.shadowColor = '#ff3b4e';
   x.shadowBlur = 30;
-  x.fillText('逆 潮', 72, 178);
+  x.fillText('斩 名 录', 72, 178);
   x.shadowBlur = 0;
   x.font = `400 20px ${SANS}`;
   x.fillStyle = 'rgba(255,180,190,0.75)';
@@ -3910,7 +3910,7 @@ function saveShareCard() {
     c.toBlob(async (b) => {
     const file = new File([b], 'tide-share.png', { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: '逆潮' }); return; } catch (e) {}
+      try { await navigator.share({ files: [file], title: '斩名录' }); return; } catch (e) {}
     }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
