@@ -7,6 +7,7 @@
 
 let W = 1280, H = 720;
 let PORTRAIT = false;
+let BOOTED = false;
 const WORLD_W = 2600;
 const ARENA = { x1: 80, x2: WORLD_W - 80, y1: 380, y2: 690 };
 const CAM = { x: 640, y: 360 };
@@ -34,6 +35,7 @@ function resizeCanvas() {
     ARENA.y1 = 380; ARENA.y2 = 690;
     CAM.y = 360;
   }
+  if (BOOTED) { P.y = clamp(P.y, ARENA.y1, ARENA.y2); layoutTouch(); }
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   canvas.style.width = '100vw';
@@ -320,14 +322,14 @@ canvas.addEventListener('pointerdown', (e) => {
   }
   if (G.mode === 'result' && G.endT > 0.6) {
     const r = shareRect();
-    if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { saveShareCard(); return; }
+    const oy = PORTRAIT ? (H - 720) / 2 : 0;
+    if (p.x >= r.x && p.x <= r.x + r.w && p.y - oy >= r.y && p.y - oy <= r.y + r.h) { saveShareCard(); return; }
   }
   if (G.mode === 'play' && (G.talent || G.upgrade || G.weaponPick)) {
-    const cw = 300, ch = 260, gap = 32;
-    const x0 = (W - (cw * 3 + gap * 2)) / 2;
+    const rects = cardRects();
     for (let i = 0; i < 3; i++) {
-      const x = x0 + i * (cw + gap);
-      if (p.x >= x && p.x <= x + cw && p.y >= 260 && p.y <= 260 + ch) { chooseCard(i); return; }
+      const r = rects[i];
+      if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { chooseCard(i); return; }
     }
     return;
   }
@@ -3919,61 +3921,96 @@ function drawCutin() {
   g.restore();
 }
 
+function cardRects() {
+  if (PORTRAIT) {
+    const cw = 470, ch = 150, x = (W - cw) / 2;
+    return [0, 1, 2].map(i => ({ x, y: 300 + i * 170, w: cw, h: ch }));
+  }
+  const cw = 300, ch = 260, gap = 32, x0 = (W - (cw * 3 + gap * 2)) / 2;
+  return [0, 1, 2].map(i => ({ x: x0 + i * (cw + gap), y: 260, w: cw, h: ch }));
+}
+
 function drawCards(title, sub, cards) {
   g.save();
-  g.fillStyle = 'rgba(4,5,10,0.82)';
+  g.fillStyle = 'rgba(4,5,10,0.86)';
   g.fillRect(0, 0, W, H);
   g.textAlign = 'center';
-  g.font = `700 34px ${F_SERIF}`;
+  g.font = `700 ${PORTRAIT ? 30 : 34}px ${F_SERIF}`;
   g.letterSpacing = '10px';
   g.fillStyle = '#f2f5fc';
   g.shadowColor = 'rgba(120,180,255,0.6)';
   g.shadowBlur = 20;
-  g.fillText(title, W / 2 + 5, 150);
+  g.fillText(title, W / 2 + 5, PORTRAIT ? 130 : 150);
   g.shadowBlur = 0;
   g.font = `400 11px ${F_SANS}`;
   g.letterSpacing = '5px';
   g.fillStyle = 'rgba(200,212,238,0.55)';
-  g.fillText(sub, W / 2, 182);
+  g.fillText(sub, W / 2, PORTRAIT ? 162 : 182);
 
-  const cw = 300, ch = 260, gap = 32;
-  const total = cw * 3 + gap * 2;
-  const x0 = (W - total) / 2;
+  const rects = cardRects();
   cards.forEach((c, i) => {
-    const x = x0 + i * (cw + gap), y = 260;
-    const hover = (i === 0);
-    g.save();
-    g.fillStyle = 'rgba(18,20,32,0.92)';
-    roundRect(x, y, cw, ch, 8); g.fill();
+    const r = rects[i];
     const isSyn = !!c.badge;
+    g.save();
+    g.fillStyle = 'rgba(18,20,32,0.94)';
+    roundRect(r.x, r.y, r.w, r.h, 8); g.fill();
     g.strokeStyle = isSyn ? 'rgba(255,200,90,0.9)' : (i === 0 ? 'rgba(255,90,105,0.8)' : 'rgba(150,180,230,0.25)');
     g.lineWidth = isSyn ? 2 : (i === 0 ? 2 : 1);
-    roundRect(x, y, cw, ch, 8); g.stroke();
-    g.textAlign = 'center';
-    if (isSyn) {
-      g.font = `700 11px ${F_SANS}`;
+    roundRect(r.x, r.y, r.w, r.h, 8); g.stroke();
+
+    if (PORTRAIT) {
+      g.textAlign = 'left';
+      if (isSyn) {
+        g.font = `700 10px ${F_SANS}`;
+        g.letterSpacing = '3px';
+        g.fillStyle = '#ffc25a';
+        g.fillText('组 合', r.x + 28, r.y + 30);
+      }
+      g.font = `700 24px ${F_SERIF}`;
       g.letterSpacing = '4px';
-      g.fillStyle = '#ffc25a';
-      g.fillText('组 合', x + cw / 2, y + 46);
+      g.fillStyle = isSyn ? '#ffd98a' : '#f0f3fa';
+      g.fillText(c.name, r.x + 28, r.y + 70);
+      if (c.type) {
+        g.font = `600 11px ${F_SANS}`;
+        g.letterSpacing = '2px';
+        g.fillStyle = 'rgba(160,220,255,0.85)';
+        g.fillText(c.type, r.x + 28, r.y + 96);
+      }
+      g.font = `400 13px ${F_SANS}`;
+      g.letterSpacing = '1px';
+      g.fillStyle = 'rgba(200,215,240,0.75)';
+      g.fillText(c.desc, r.x + 28, r.y + 124);
+      g.textAlign = 'right';
+      g.font = `700 18px ${F_NUM}`;
+      g.fillStyle = 'rgba(255,140,150,0.9)';
+      g.fillText('[' + (i + 1) + ']', r.x + r.w - 26, r.y + 74);
+    } else {
+      g.textAlign = 'center';
+      if (isSyn) {
+        g.font = `700 11px ${F_SANS}`;
+        g.letterSpacing = '4px';
+        g.fillStyle = '#ffc25a';
+        g.fillText('组 合', r.x + r.w / 2, r.y + 46);
+      }
+      g.font = `700 26px ${F_SERIF}`;
+      g.letterSpacing = '6px';
+      g.fillStyle = isSyn ? '#ffd98a' : '#f0f3fa';
+      g.fillText(c.name, r.x + r.w / 2, r.y + 86);
+      if (c.type) {
+        g.font = `600 11px ${F_SANS}`;
+        g.letterSpacing = '3px';
+        g.fillStyle = 'rgba(160,220,255,0.85)';
+        g.fillText(c.type, r.x + r.w / 2, r.y + 116);
+      }
+      g.font = `400 14px ${F_SANS}`;
+      g.letterSpacing = '2px';
+      g.fillStyle = 'rgba(200,215,240,0.75)';
+      g.fillText(c.desc, r.x + r.w / 2, r.y + 152);
+      g.font = `700 12px ${F_NUM}`;
+      g.letterSpacing = '2px';
+      g.fillStyle = 'rgba(255,140,150,0.9)';
+      g.fillText('[' + (i + 1) + ']', r.x + r.w / 2, r.y + 208);
     }
-    g.font = `700 26px ${F_SERIF}`;
-    g.letterSpacing = '6px';
-    g.fillStyle = isSyn ? '#ffd98a' : '#f0f3fa';
-    g.fillText(c.name, x + cw / 2, y + 86);
-    if (c.type) {
-      g.font = `600 11px ${F_SANS}`;
-      g.letterSpacing = '3px';
-      g.fillStyle = 'rgba(160,220,255,0.85)';
-      g.fillText(c.type, x + cw / 2, y + 116);
-    }
-    g.font = `400 14px ${F_SANS}`;
-    g.letterSpacing = '2px';
-    g.fillStyle = 'rgba(200,215,240,0.75)';
-    g.fillText(c.desc, x + cw / 2, y + 152);
-    g.font = `700 12px ${F_NUM}`;
-    g.letterSpacing = '2px';
-    g.fillStyle = 'rgba(255,140,150,0.9)';
-    g.fillText('[' + (i + 1) + ']', x + cw / 2, y + 208);
     g.restore();
   });
   g.restore();
@@ -4277,5 +4314,6 @@ if (rotBtn) {
 const qs = new URLSearchParams(location.search);
 if (qs.get('skip') === '1') setTimeout(() => startGame(), 80);
 
+BOOTED = true;
 window.__tide = { G, P, enemies, projectiles, startGame, spawnEnemy, startStage, attack, dash, tryUlt, hurtPlayer, killEnemy, hitEnemy, endGame, joy, buildShareCanvas };
 })();
