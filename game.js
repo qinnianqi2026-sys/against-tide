@@ -888,7 +888,8 @@ const ENEMY_ART = {
   brute:  { src: 'art/enemies/e-3.webp', h: 116 },
   archer: { src: 'art/enemies/e-1.webp', h: 100 },
   bomber: { src: 'art/enemies/e-2.webp', h: 88 },
-  shield: { src: 'art/enemies/e-3.webp', h: 112 }
+  shield: { src: 'art/enemies/e-3.webp', h: 112 },
+  shadow: { src: 'art/enemies/e-0.webp', h: 92 }
 };
 const ENEMY_TINT = {
   grunt: 'rgba(150,168,200,0.46)',
@@ -896,7 +897,8 @@ const ENEMY_TINT = {
   archer: 'rgba(120,200,220,0.38)',
   bomber: 'rgba(220,125,95,0.42)',
   shield: 'rgba(210,180,120,0.36)',
-  brute: 'rgba(210,180,120,0.36)'
+  brute: 'rgba(210,180,120,0.36)',
+  shadow: 'rgba(255,70,90,0.55)'
 };
 function tintCanvas(img, color) {
   const c = document.createElement('canvas');
@@ -1776,6 +1778,7 @@ const KINDS = {
   shield: { hp: 4, speed: 46, r: 20, scale: 1.08, dmg: 1, body: '#1c1a26', eye: '#ffd36e' },
   archer: { hp: 1, speed: 64, r: 13, scale: 0.92, dmg: 1, body: '#151b24', eye: '#8fe3ff' },
   bomber: { hp: 1, speed: 118, r: 15, scale: 0.88, dmg: 2, body: '#1d1419', eye: '#ff8a5a' },
+  shadow: { hp: 3, speed: 128, r: 13, scale: 0.8, dmg: 1, body: '#1a1018', eye: '#ff3b4e' },
   oni:    { hp: 240, speed: 62, r: 40, scale: 1.75, dmg: 2, body: '#120d16', eye: '#ff3b4e' }
 };
 
@@ -1953,6 +1956,11 @@ function updateOni(e, dt) {
       spawnEnemy('grunt', e.x - 170, e.y + 30);
       spawnEnemy('grunt', e.x + 150, e.y + 20);
     }
+    if (phase === 3) {
+      spawnEnemy('shadow', e.x - 150, e.y + 30);
+      spawnEnemy('shadow', e.x + 140, e.y + 20);
+      spawnEnemy('shadow', e.x + 20, e.y - 60);
+    }
     SFX.roar();
   }
 
@@ -2127,7 +2135,7 @@ const STAGES = [
     elite: ['shield', 'shield', 'archer', 'archer', 'archer', 'archer'], eliteAt2: 34, elite2: ['bomber', 'bomber', 'archer', 'archer', 'shield', 'grunt', 'grunt'] },
   { title: '第 二 阵 · 弓 火', quota: 60, eliteAt: 26, pool: ['grunt', 'crawler', 'archer', 'bomber', 'shield', 'archer'],
     elite: ['bomber', 'bomber', 'bomber', 'archer', 'archer', 'shield'], eliteAt2: 40, elite2: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'grunt', 'grunt'] },
-  { title: '第 三 阵 · 黄 泉', quota: 60, eliteAt: 26, pool: ['crawler', 'archer', 'bomber', 'shield', 'grunt', 'bomber'],
+  { title: '第 三 阵 · 黄 泉', quota: 60, eliteAt: 26, pool: ['crawler', 'archer', 'bomber', 'shield', 'shadow', 'bomber'],
     elite: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'archer'], eliteAt2: 46, elite2: ['shield', 'shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'grunt'] },
   { title: '第 四 阵 · 鬼 武 者', boss: true }
 ];
