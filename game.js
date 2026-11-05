@@ -3731,7 +3731,58 @@ function drawHUD() {
 }
 
 /* ---------------- 标题 / 结算 ---------------- */
+function drawTitlePortrait() {
+  g.save();
+  g.fillStyle = 'rgba(6,6,10,0.55)';
+  g.fillRect(0, 0, W, H);
+  g.textAlign = 'center';
+  text('斩 名 录', W / 2, 196, { size: 76, family: F_SERIF, weight: 700, color: '#f2f5fc', align: 'center', spacing: 14, glow: 30, glowColor: 'rgba(255,70,90,0.45)' });
+  text('T H E   N A M E   B L A D E', W / 2, 240, { size: 10, color: 'rgba(170,190,220,0.7)', align: 'center', spacing: 5 });
+
+  const card = IMG.card.complete && IMG.card.naturalWidth ? IMG.card : IMG.su;
+  if (card.complete && card.naturalWidth) {
+    const cw = 340, ch = 453, x = (W - cw) / 2, y = 286;
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.7)';
+    g.shadowBlur = 34;
+    g.drawImage(card, x, y, cw, ch);
+    g.restore();
+    text('SU  /  19  /  被逐出师门', W / 2, y + ch + 30, { size: 9, color: 'rgba(200,212,238,0.55)', align: 'center', spacing: 3 });
+  }
+
+  text('三阵。', W / 2, 836, { size: 17, family: F_SERIF, color: 'rgba(225,232,248,0.9)', align: 'center', spacing: 2 });
+  text('走到鬼武者面前，然后斩了他。', W / 2, 872, { size: 15, family: F_SERIF, color: 'rgba(225,232,248,0.72)', align: 'center', spacing: 2 });
+
+  const rows = IS_TOUCH ? [
+    ['左侧', '拖动移动'],
+    ['斩', '攻击 · 按住自动重斩'],
+    ['闪', '闪身 · 见切慢镜'],
+    ['名册', '满槽清屏']
+  ] : [
+    ['WASD', '移动'],
+    ['J', '斩 · 四段 / 按住蓄力'],
+    ['K', '闪身 · 见切慢镜'],
+    ['E', '名册 · 满槽清场']
+  ];
+  rows.forEach((r, i) => {
+    const y = 950 + i * 44;
+    g.save();
+    g.fillStyle = 'rgba(255,255,255,0.06)';
+    roundRect(W / 2 - 150, y - 16, 58, 24, 4); g.fill();
+    g.strokeStyle = 'rgba(255,120,135,0.25)'; g.lineWidth = 1;
+    roundRect(W / 2 - 150, y - 16, 58, 24, 4); g.stroke();
+    text(r[0], W / 2 - 121, y + 1, { size: 10, color: '#ffb8c0', align: 'center', spacing: 1 });
+    text(r[1], W / 2 - 78, y + 1, { size: 13, color: 'rgba(210,222,245,0.78)' });
+    g.restore();
+  });
+
+  if (G.best > 0) text('BEST  ' + String(G.best).padStart(7, '0'), W / 2, 1160, { size: 10, color: 'rgba(200,212,238,0.5)', align: 'center', spacing: 3 });
+  text(IS_TOUCH ? '点 击 屏 幕 开 始' : '单 击  或  按 任 意 键  开 始', W / 2, 1214, { size: 13, color: '#ffe8eb', align: 'center', spacing: 6, glow: 12 });
+  g.restore();
+}
+
 function drawTitle() {
+  if (PORTRAIT) { drawTitlePortrait(); return; }
   const t = G.t;
   // 主角立绘卡
   const card = IMG.card.complete && IMG.card.naturalWidth ? IMG.card : IMG.su;
@@ -4111,6 +4162,7 @@ function drawResult() {
   g.fillStyle = '#05040a';
   g.fillRect(0, 0, W, H);
   g.globalAlpha = a;
+  if (PORTRAIT) g.translate(0, (H - 720) / 2);
   g.textAlign = 'center';
 
   const win = G.victory;
