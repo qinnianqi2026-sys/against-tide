@@ -1497,6 +1497,23 @@ function drawCutoutPlayer() {
   g.save();
   g.translate(P.x, P.y + bob);
   g.scale(-P.face * s, s);
+  if (P.attackT > 0) {
+    const kk = 1 - P.attackT / P.attackDur;
+    if (kk > 0.12 && kk < 0.85) {
+      const e = Math.min(1, (kk - 0.12) / 0.6);
+      const a0 = -2.45, a1 = a0 + e * 2.7;
+      g.save();
+      g.globalCompositeOperation = 'lighter';
+      g.strokeStyle = 'rgba(255,255,255,' + (0.20 + 0.30 * Math.sin(e * Math.PI)) + ')';
+      g.lineWidth = 14;
+      g.lineCap = 'round';
+      g.beginPath(); g.arc(0, -150, 104, a0, a1); g.stroke();
+      g.strokeStyle = 'rgba(255,150,160,' + (0.10 + 0.18 * Math.sin(e * Math.PI)) + ')';
+      g.lineWidth = 30;
+      g.beginPath(); g.arc(0, -150, 110, a0, a1); g.stroke();
+      g.restore();
+    }
+  }
   g.imageSmoothingEnabled = false;
   g.drawImage(img, -m.ax, -m.ay);
   g.imageSmoothingEnabled = true;
