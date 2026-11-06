@@ -581,88 +581,95 @@ function drawTorii(b, x, y, s, col) {
 
 buildBG();
 
-// 可滚动的地面
-const groundCanvas = document.createElement('canvas');
-groundCanvas.width = WORLD_W; groundCanvas.height = 390;
-{
-  const b = groundCanvas.getContext('2d');
-  const grad = b.createLinearGradient(0, 0, 0, 390);
-  grad.addColorStop(0, '#343c50');
-  grad.addColorStop(0.5, '#232a3b');
-  grad.addColorStop(1, '#141926');
-  b.fillStyle = grad;
+// 可滚动的地面（透视石板）
+function makeGround(warm) {
+  const cv = document.createElement('canvas');
+  cv.width = WORLD_W; cv.height = 390;
+  const b = cv.getContext('2d');
+  const top = warm ? '#7a5a45' : '#3d465c';
+  const mid = warm ? '#4a3327' : '#28303f';
+  const bot = warm ? '#211511' : '#121722';
+  const g0 = b.createLinearGradient(0, 0, 0, 390);
+  g0.addColorStop(0, top); g0.addColorStop(0.45, mid); g0.addColorStop(1, bot);
+  b.fillStyle = g0;
   b.fillRect(0, 0, WORLD_W, 390);
-  for (let row = 0; row < 17; row++) {
-    const y = row * 24, off = (row % 2) * 24;
-    for (let x = -48; x < WORLD_W; x += 48) {
-      const px = x + off;
-      b.fillStyle = `rgba(190,210,240,${0.03 + Math.random() * 0.04})`;
-      b.fillRect(px + 1, y + 1, 46, 22);
-      b.strokeStyle = `rgba(10,14,22,${0.14 + Math.random() * 0.10})`;
-      b.lineWidth = 1;
-      b.strokeRect(px + 0.5, y + 0.5, 47, 23);
-    }
-  }
-  for (let i = 0; i < 140; i++) {
-    b.fillStyle = `rgba(150,165,195,${0.05 + Math.random() * 0.08})`;
-    b.fillRect(Math.random() * WORLD_W, Math.random() * 390, 1 + Math.random() * 2, 1);
-  }
-  // 苔痕与落叶
-  for (let i = 0; i < 46; i++) {
-    const x = Math.random() * WORLD_W, y = 20 + Math.random() * 350, r = 6 + Math.random() * 22;
-    b.fillStyle = `rgba(70,80,55,${0.05 + Math.random() * 0.08})`;
-    b.beginPath(); b.ellipse(x, y, r, r * 0.4, Math.random() * 3, 0, TAU); b.fill();
-  }
-  const fog = b.createLinearGradient(0, 0, 0, 90);
-  fog.addColorStop(0, 'rgba(8,10,18,1)');
-  fog.addColorStop(0.5, 'rgba(9,11,20,0.7)');
-  fog.addColorStop(1, 'rgba(9,11,20,0)');
-  b.fillStyle = fog;
-  b.fillRect(0, 0, WORLD_W, 90);
-}
 
-const groundDusk = document.createElement('canvas');
-groundDusk.width = WORLD_W; groundDusk.height = 390;
-{
-  const b = groundDusk.getContext('2d');
-  const grad = b.createLinearGradient(0, 0, 0, 390);
-  grad.addColorStop(0, '#6a5142');
-  grad.addColorStop(0.5, '#45332a');
-  grad.addColorStop(1, '#241a16');
-  b.fillStyle = grad;
-  b.fillRect(0, 0, WORLD_W, 390);
-  for (let row = 0; row < 17; row++) {
-    const y = row * 24, off = (row % 2) * 24;
-    for (let x = -48; x < WORLD_W; x += 48) {
+  let y = 0, row = 0;
+  while (y < 390) {
+    const t = y / 390;
+    const rh = Math.max(8, Math.round(9 + Math.pow(t, 1.5) * 26));
+    const tw = Math.max(22, Math.round(30 + Math.pow(t, 1.2) * 56));
+    const off = (row % 2) * tw * 0.5;
+    for (let x = -tw; x < WORLD_W; x += tw) {
       const px = x + off;
-      b.fillStyle = `rgba(255,220,180,${0.03 + Math.random() * 0.04})`;
-      b.fillRect(px + 1, y + 1, 46, 22);
-      b.strokeStyle = `rgba(20,12,10,${0.14 + Math.random() * 0.10})`;
+      b.fillStyle = warm
+        ? `rgba(255,214,170,${0.018 + Math.random() * 0.03})`
+        : `rgba(190,210,240,${0.018 + Math.random() * 0.03})`;
+      b.fillRect(px + 1, y + 1, tw - 2, rh - 2);
+      b.strokeStyle = warm
+        ? `rgba(26,14,10,${0.12 + Math.random() * 0.10})`
+        : `rgba(8,10,18,${0.12 + Math.random() * 0.10})`;
       b.lineWidth = 1;
-      b.strokeRect(px + 0.5, y + 0.5, 47, 23);
+      b.strokeRect(px + 0.5, y + 0.5, tw - 1, rh - 1);
     }
+    // 草簇与碎石
+    for (let i = 0; i < 3; i++) {
+      const gx = Math.random() * WORLD_W;
+      b.strokeStyle = warm ? `rgba(52,58,40,${0.25 + t * 0.3})` : `rgba(40,55,45,${0.2 + t * 0.25})`;
+      b.lineWidth = 1;
+      b.beginPath();
+      b.moveTo(gx, y + rh);
+      b.lineTo(gx + (Math.random() - 0.5) * 6, y + rh - 4 - Math.random() * 8);
+      b.stroke();
+    }
+    y += rh; row++;
   }
-  for (let i = 0; i < 140; i++) {
-    b.fillStyle = `rgba(255,210,160,${0.04 + Math.random() * 0.06})`;
-    b.fillRect(Math.random() * WORLD_W, Math.random() * 390, 1 + Math.random() * 2, 1);
+  // 苔痕
+  for (let i = 0; i < 50; i++) {
+    const x = Math.random() * WORLD_W, yy = Math.random() * 390, r = 5 + Math.random() * 18;
+    b.fillStyle = warm ? `rgba(90,80,55,${0.06 + Math.random() * 0.08})` : `rgba(60,80,70,${0.05 + Math.random() * 0.08})`;
+    b.beginPath(); b.ellipse(x, yy, r, r * 0.35, Math.random() * 3, 0, TAU); b.fill();
   }
-  // 苔痕与落叶
-  for (let i = 0; i < 46; i++) {
-    const x = Math.random() * WORLD_W, y = 20 + Math.random() * 350, r = 6 + Math.random() * 22;
-    b.fillStyle = `rgba(70,80,55,${0.05 + Math.random() * 0.08})`;
-    b.beginPath(); b.ellipse(x, y, r, r * 0.4, Math.random() * 3, 0, TAU); b.fill();
-  }
-    for (let i = 0; i < 70; i++) {
-    const x = Math.random() * WORLD_W, y = 20 + Math.random() * 350, r = 5 + Math.random() * 20;
-    b.fillStyle = `rgba(80,70,50,${0.05 + Math.random() * 0.09})`;
-    b.beginPath(); b.ellipse(x, y, r, r * 0.35, Math.random() * 3, 0, TAU); b.fill();
-  }
-const fog = b.createLinearGradient(0, 0, 0, 90);
-  fog.addColorStop(0, 'rgba(32,18,14,0.95)');
-  fog.addColorStop(0.5, 'rgba(38,22,18,0.65)');
-  fog.addColorStop(1, 'rgba(38,22,18,0)');
+  // 顶部融入天际
+  const fog = b.createLinearGradient(0, 0, 0, 110);
+  fog.addColorStop(0, warm ? 'rgba(40,22,18,0.95)' : 'rgba(8,10,18,0.95)');
+  fog.addColorStop(0.55, warm ? 'rgba(52,30,24,0.55)' : 'rgba(10,12,20,0.55)');
+  fog.addColorStop(1, 'rgba(0,0,0,0)');
   b.fillStyle = fog;
-  b.fillRect(0, 0, WORLD_W, 90);
+  b.fillRect(0, 0, WORLD_W, 110);
+  return cv;
+}
+const groundCanvas = makeGround(false);
+const groundDusk = makeGround(true);
+
+// 崖边剪影：草丛、断栏、石块，收住地平线
+const backEdge = document.createElement('canvas');
+backEdge.width = WORLD_W; backEdge.height = 130;
+{
+  const b = backEdge.getContext('2d');
+  b.clearRect(0, 0, WORLD_W, 130);
+  // 断栏
+  for (let x = 120; x < WORLD_W; x += 190) {
+    if (Math.random() < 0.45) continue;
+    b.fillStyle = 'rgba(12,10,14,0.9)';
+    b.fillRect(x, 34, 4, 96);
+    b.fillRect(x + 40, 40, 4, 90);
+    b.fillRect(x - 4, 56, 52, 4);
+    if (Math.random() < 0.5) b.fillRect(x + 8, 72, 40, 3);
+  }
+  // 石块
+  for (let i = 0; i < 40; i++) {
+    const x = Math.random() * WORLD_W, w = 10 + Math.random() * 34, h = 6 + Math.random() * 18;
+    b.fillStyle = `rgba(10,9,12,${0.55 + Math.random() * 0.35})`;
+    b.beginPath(); b.ellipse(x, 128 - Math.random() * 8, w, h, 0, 0, TAU); b.fill();
+  }
+  // 草丛
+  for (let i = 0; i < 260; i++) {
+    const x = Math.random() * WORLD_W, h = 10 + Math.random() * 46, lean = (Math.random() - 0.5) * 12;
+    b.strokeStyle = `rgba(10,12,10,${0.5 + Math.random() * 0.4})`;
+    b.lineWidth = 1 + Math.random();
+    b.beginPath(); b.moveTo(x, 130); b.quadraticCurveTo(x + lean * 0.4, 130 - h * 0.6, x + lean, 130 - h); b.stroke();
+  }
 }
 
 // 前景草丛（屏幕空间，增加纵深）
@@ -1475,6 +1482,18 @@ function drawCutoutPlayer() {
   const m = HERO_META[set][idx];
   if (!img || !img.complete || !img.naturalWidth) return false;
   const s = (PORTRAIT ? 0.32 : 0.36) * depth(P.y);
+  if (P.state === 'dodge') {
+    for (let i = 2; i >= 1; i--) {
+      g.save();
+      g.globalAlpha = 0.16;
+      g.translate(P.x - P.face * 14 * i, P.y + bob);
+      g.scale(-P.face * s, s);
+      g.imageSmoothingEnabled = false;
+      g.drawImage(img, -m.ax, -m.ay);
+      g.restore();
+    }
+    g.globalAlpha = 1;
+  }
   g.save();
   g.translate(P.x, P.y + bob);
   g.scale(-P.face * s, s);
@@ -3325,6 +3344,7 @@ function render() {
     g.fillRect(0, 400, WORLD_W, 180);
   }
   else g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 330);
+  g.drawImage(backEdge, 0, 380);
   drawProps();
   drawWaves();
 
