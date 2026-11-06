@@ -904,13 +904,13 @@ SU_FRAMES.forEach(f => {
 
 // 敌人 / Boss 立绘
 const ENEMY_ART = {
-  grunt:  { src: 'art/pixel/enemies/e-0.png', h: 74 },
-  crawler:{ src: 'art/pixel/enemies/e-0.png', h: 56 },
-  brute:  { src: 'art/pixel/enemies/e-3.png', h: 92 },
-  archer: { src: 'art/pixel/enemies/e-1.png', h: 78 },
-  bomber: { src: 'art/pixel/enemies/e-2.png', h: 66 },
-  shield: { src: 'art/pixel/enemies/e-3.png', h: 88 },
-  shadow: { src: 'art/pixel/enemies/e-0.png', h: 70 }
+  grunt:  { src: 'art/pixel/enemies/e-0.png', h: 52 },
+  crawler:{ src: 'art/pixel/enemies/e-0.png', h: 39 },
+  brute:  { src: 'art/pixel/enemies/e-3.png', h: 65 },
+  archer: { src: 'art/pixel/enemies/e-1.png', h: 55 },
+  bomber: { src: 'art/pixel/enemies/e-2.png', h: 46 },
+  shield: { src: 'art/pixel/enemies/e-3.png', h: 62 },
+  shadow: { src: 'art/pixel/enemies/e-0.png', h: 49 }
 };
 const ENEMY_TINT = {
   grunt: 'rgba(150,168,200,0.46)',
@@ -1474,7 +1474,7 @@ function drawCutoutPlayer() {
   const img = HERO_FRAMES[set][idx];
   const m = HERO_META[set][idx];
   if (!img || !img.complete || !img.naturalWidth) return false;
-  const s = (PORTRAIT ? 0.47 : 0.52) * depth(P.y);
+  const s = (PORTRAIT ? 0.32 : 0.36) * depth(P.y);
   g.save();
   g.translate(P.x, P.y + bob);
   g.scale(-P.face * s, s);
@@ -2388,13 +2388,13 @@ function updateStage(dt) {
   if (G.stageKills < st.quota) {
     G.spawnT -= dt;
     const alive = enemies.filter(e => !e.dead).length;
-    if (G.spawnT <= 0 && alive < (G.stage === 1 ? 34 : 40)) {
-      G.spawnT = 0.42 - G.stage * 0.05;
+    if (G.spawnT <= 0 && alive < (G.stage === 1 ? 48 : 56)) {
+      G.spawnT = 0.34 - G.stage * 0.04;
       spawnEnemy(st.pool[Math.floor(Math.random() * st.pool.length)]);
       if (Math.random() < 0.3) spawnEnemy(st.pool[Math.floor(Math.random() * st.pool.length)]);
     }
     G.formT -= dt;
-    if (G.formT <= 0 && alive < 32) {
+    if (G.formT <= 0 && alive < 46) {
       G.formT = 11 - G.stage;
       const dir = Math.random() < 0.5 ? -1 : 1;
       const bx = clamp(P.x + dir * 520, ARENA.x1 + 60, ARENA.x2 - 60);
@@ -3370,7 +3370,7 @@ function render() {
     g.restore();
 
     if (e === P) {
-      g.drawImage(auraCanvas, P.x - 110, P.y - 150, 220, 220);
+      g.drawImage(auraCanvas, P.x - 80, P.y - 105, 160, 160);
       g.strokeStyle = 'rgba(150,230,255,0.28)';
       g.lineWidth = 1.5;
       g.beginPath();
