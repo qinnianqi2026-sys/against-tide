@@ -3522,10 +3522,10 @@ function render() {
     if (duskScene) {
       if (PORTRAIT) {
         const bw2 = W * 1.2, bh2 = bw2 * 720 / 1280;
-        const px = clamp(-(CAM.x - 640) * 0.12, -60, 60);
-        const bx2 = (W - bw2) / 2 + px;
+        const px = Math.round(clamp(-(CAM.x - 640) * 0.12, -60, 60));
+        const bx2 = Math.round((W - bw2) / 2 + px);
         const horizon = 420 - (CAM.y - H / 2);
-        const by2 = horizon - bh2 * 0.58;
+        const by2 = Math.round(horizon - bh2 * 0.58);
         g.drawImage(bgD, bx2, by2, bw2, bh2);
         const sky = g.createLinearGradient(0, 0, 0, by2 + 90);
         sky.addColorStop(0, '#0e0c18');
@@ -3533,7 +3533,7 @@ function render() {
         g.fillStyle = sky;
         g.fillRect(0, 0, W, by2 + 90);
       } else {
-        const px = clamp(-(CAM.x - 640) * 0.06, -40, 40);
+        const px = Math.round(clamp(-(CAM.x - 640) * 0.06, -40, 40));
         g.drawImage(bgD, bx + px, by, bw, bh);
       }
       g.drawImage(overlayDusk, 0, 0, W, H);
@@ -3553,7 +3553,7 @@ function render() {
 
   // ---- 相机：世界坐标 ----
   g.save();
-  g.translate(W / 2 - CAM.x, H / 2 - CAM.y);
+  g.translate(W / 2 - Math.round(CAM.x), H / 2 - Math.round(CAM.y));
   if (G.punch > 0.001) {
     const pz = 1 + G.punch * 0.05;
     g.translate(P.x, P.y);
@@ -3597,8 +3597,8 @@ function render() {
   for (const e of enemies) {
     if (e.dead) continue;
     g.save();
-    g.globalAlpha = 0.8;
-    g.drawImage(enemyAura, e.x - 96, e.y - 128, 192, 192);
+    g.globalAlpha = e.elite ? 0.55 : 0.32;
+    g.drawImage(enemyAura, e.x - 80, e.y - 108, 160, 160);
     g.restore();
   }
 
@@ -3606,7 +3606,7 @@ function render() {
   const list = [];
   for (const e of enemies) list.push(e);
   if (G.mode !== 'title') list.push(P);
-  list.sort((a, b) => a.y - b.y);
+  list.sort((a, b) => (a === P ? 1 : 0) - (b === P ? 1 : 0) || a.y - b.y);
 
   for (const e of list) {
     // 影子
@@ -3627,7 +3627,10 @@ function render() {
       g.stroke();
       const atk = P.attackT > 0 ? 1 - P.attackT / P.attackDur : 0;
       if (P.invuln > 0 && Math.floor(P.invuln * 18) % 2 === 0) g.globalAlpha = 0.45;
+      g.shadowColor = 'rgba(140,220,255,0.5)';
+      g.shadowBlur = 10;
       const spriteDrawn = drawPlayerSprite();
+      g.shadowBlur = 0;
       if (!spriteDrawn) drawSu(P.x, P.y, 0.9 * depth(P.y), P.face, P.animT, {
         run: P.run, atk: P.attackT > 0 ? easeOut(Math.min(1, atk * 1.6)) : 0,
         glow: P.attackT > 0 ? 1 : 0.2
