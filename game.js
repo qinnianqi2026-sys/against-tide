@@ -1026,8 +1026,12 @@ function drawEnemySprite(e) {
     g.beginPath(); g.ellipse(e.x, e.y - 50 * s, 34 * s, 50 * s, 0, 0, TAU); g.fill();
     g.restore();
   }
+  const st = Math.max(0, e.spawnT || 0);
+  const rise = (st / 0.4) * 26 * depth(e.y);
+  const jitter = e.stun > 0 ? (Math.random() - 0.5) * 3 : 0;
   g.save();
-  g.translate(e.x, e.y - (e.z || 0));
+  g.globalAlpha = 1 - (st / 0.4) * 0.75;
+  g.translate(e.x + jitter, e.y - (e.z || 0) + rise);
   g.scale(e.face * s, s);
   g.imageSmoothingEnabled = false;
   g.drawImage(img, -iw / 2, -ih);
@@ -1556,6 +1560,8 @@ function drawCutoutPlayer() {
   }
   g.save();
   g.translate(P.x, P.y + bob);
+  if (P.hurtT > 0.2) g.rotate(-P.face * 0.10);
+  if (!P.run && P.attackT <= 0) g.scale(1, 1 + Math.sin(P.animT * 1.8) * 0.012);
   g.scale(-P.face * s, s);
   if (P.attackT > 0) {
     const kk = 1 - P.attackT / P.attackDur;
@@ -1836,6 +1842,7 @@ function hitEnemy(e, dmg, ang, launch, noChain, noExplode) {
   sparks(e.x, e.y - 46 * e.scale, 9, '#ffffff', 320, ang, 1.5);
   sparks(e.x, e.y - 46 * e.scale, 5, '#ff6a78', 220, ang, 1.1);
   ring(e.x, e.y - 42 * e.scale, 4, 34, '#ffffff', 1.6, 0.18);
+  ring(e.x, e.y - 8, 8, 46 + 10 * e.scale, 'rgba(255,220,190,0.9)', 1, 0.16);
   G.kickX += Math.cos(ang) * 5;
   G.kickY += Math.sin(ang) * 3;
   floatText(String(deal), e.x + rnd(-8, 8), e.y - 78, e.kind === 'oni' ? '#ffd36e' : '#fff1f2', e.kind === 'oni' ? 20 : 16);
@@ -2006,7 +2013,7 @@ function spawnEnemy(kind, fx, fy) {
     kind, def: k, x, y, r: k.r, scale: k.scale * rnd(0.94, 1.06),
     hp: k.hp, maxHp: k.hp, speed: k.speed * rnd(0.9, 1.1), guard: kind === 'shield' ? 2 : 0,
     face: -1, state: 'chase', st: 0, cd: rnd(0.2, 0.9),
-    kx: 0, ky: 0, stun: 0, hitFlash: 0, dead: false, deadT: 0,
+    kx: 0, ky: 0, stun: 0, hitFlash: 0, dead: false, deadT: 0, spawnT: 0.4,
     animT: rnd(0, 10), ph: rnd(0, TAU), bob: rnd(0, TAU)
   };
   enemies.push(e);
@@ -2330,6 +2337,7 @@ function updateEnemies(dt) {
   // 边界
   for (const e of enemies) {
     if (e.dead) continue;
+    if (e.spawnT > 0) e.spawnT = Math.max(0, e.spawnT - dt);
     e.x = clamp(e.x, ARENA.x1 - 40, ARENA.x2 + 40);
     e.y = clamp(e.y, ARENA.y1 - 30, ARENA.y2 + 20);
   }
