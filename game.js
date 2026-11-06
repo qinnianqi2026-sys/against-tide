@@ -3970,6 +3970,22 @@ function drawBossEnter() {
   g.restore();
 }
 
+function hudIcon(x, y, glyph, col) {
+  g.save();
+  g.fillStyle = 'rgba(255,255,255,0.07)';
+  roundRect(x, y, 18, 18, 4); g.fill();
+  g.globalAlpha = 0.8;
+  g.strokeStyle = col;
+  g.lineWidth = 1;
+  roundRect(x, y, 18, 18, 4); g.stroke();
+  g.globalAlpha = 1;
+  g.fillStyle = col;
+  g.font = `700 11px ${F_SERIF}`;
+  g.textAlign = 'center';
+  g.fillText(glyph, x + 9, y + 13);
+  g.restore();
+}
+
 function drawHUD() {
   // 关卡进度 / Boss 血条
   g.save();
@@ -4059,7 +4075,10 @@ function drawHUD() {
   }
   text(String(P.hp), 168, PORTRAIT ? 108 : 92, { size: 14, color: 'rgba(200,215,240,0.5)' });
   // 兵刃
-  if (G.weaponName) text('兵 刃 · ' + G.weaponName, 40, PORTRAIT ? 132 : 112, { size: 12, color: '#bfe8ff', spacing: 2 });
+  if (G.weaponName) {
+    hudIcon(40, PORTRAIT ? 119 : 99, '刀', '#bfe8ff');
+    text('兵 刃 · ' + G.weaponName, 64, PORTRAIT ? 133 : 113, { size: 12, color: '#bfe8ff', spacing: 2 });
+  }
   // 天赋
   if (G.talentName) {
     text('天 赋 · ' + G.talentName, 40, PORTRAIT ? 148 : 128, { size: 12, color: '#ffd98a', spacing: 2 });
