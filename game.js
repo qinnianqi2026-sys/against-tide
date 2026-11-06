@@ -4283,7 +4283,11 @@ function drawCards(title, sub, cards) {
   const openK = clamp((performance.now() - (G.cardOpenAt || 0)) / 170, 0, 1);
   const ease = 1 - Math.pow(1 - openK, 3);
   g.globalAlpha = 0.35 + 0.65 * ease;
-  g.fillStyle = 'rgba(4,5,10,0.86)';
+  const bgGrad = g.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, 'rgba(4,5,10,0.94)');
+  bgGrad.addColorStop(0.42, 'rgba(9,10,18,0.78)');
+  bgGrad.addColorStop(1, 'rgba(3,4,8,0.96)');
+  g.fillStyle = bgGrad;
   g.fillRect(0, 0, W, H);
   g.textAlign = 'center';
   g.font = `700 ${PORTRAIT ? 36 : 40}px ${F_SERIF}`;
@@ -4315,6 +4319,20 @@ function drawCards(title, sub, cards) {
     const hot = G.hoverCard === i;
     g.fillStyle = isSyn ? 'rgba(255,190,80,0.9)' : (hot ? '#ffd36e' : 'rgba(255,80,100,0.75)');
     g.fillRect(r.x, r.y, 4, r.h);
+    if (i === 0) {
+      g.save();
+      g.fillStyle = 'rgba(255,90,105,0.16)';
+      roundRect(r.x + r.w - 74, r.y + 14, 60, 22, 11); g.fill();
+      g.strokeStyle = 'rgba(255,120,135,0.55)';
+      g.lineWidth = 1;
+      roundRect(r.x + r.w - 74, r.y + 14, 60, 22, 11); g.stroke();
+      g.font = `600 11px ${F_SANS}`;
+      g.letterSpacing = '2px';
+      g.fillStyle = 'rgba(255,190,198,0.9)';
+      g.textAlign = 'center';
+      g.fillText('推荐', r.x + r.w - 44, r.y + 29);
+      g.restore();
+    }
     g.strokeStyle = hot ? '#ffd36e' : (isSyn ? 'rgba(255,200,90,0.9)' : (i === 0 ? 'rgba(255,90,105,0.7)' : 'rgba(150,180,230,0.22)'));
     g.lineWidth = hot ? 3 : (isSyn ? 2 : (i === 0 ? 1.5 : 1));
     roundRect(r.x, r.y, r.w, r.h, 8); g.stroke();
@@ -4376,6 +4394,11 @@ function drawCards(title, sub, cards) {
     }
     g.restore();
   });
+  g.font = `400 13px ${F_SANS}`;
+  g.letterSpacing = '4px';
+  g.fillStyle = 'rgba(190,205,235,0.5)';
+  g.textAlign = 'center';
+  g.fillText('按 1 / 2 / 3 或点击卡片选择', W / 2, H - 56);
   g.restore();
 }
 
