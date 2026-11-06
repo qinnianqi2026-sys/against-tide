@@ -2517,6 +2517,8 @@ function startStage(n, keep) {
     boss.phase = 1;
     boss.cd = 0.8;
     G.banner = { title: '第 三 阵 · 鬼 武 者', sub: '斩 将', t: 0, dur: 2.4 };
+    G.bossEnterT = 1.8;
+    G.slowT = 0.5;
     SFX.roar();
   } else {
     G.bloodMoon = false;
@@ -2607,6 +2609,7 @@ function update(dt) {
   CAM.y = PORTRAIT ? 676 : 360;
   G.hitstop = Math.max(0, G.hitstop - dt);
   G.slowT = Math.max(0, G.slowT - dt);
+  if (G.bossEnterT > 0) G.bossEnterT = Math.max(0, G.bossEnterT - dt);
   G.punch = Math.max(0, G.punch - dt * 7);
   const frozen = G.hitstop > 0;
   const dtW = dt * (frozen ? 0.03 : (G.slowT > 0 ? 0.3 : 1));
@@ -3701,6 +3704,7 @@ function render() {
     g.drawImage(fgGrass, 0, H - 190);
     g.drawImage(fgGrass2, 0, H - 120);
     drawHUD();
+    if (G.bossEnterT > 0) drawBossEnter();
   }
   if (IS_TOUCH && G.mode === 'play') drawTouchUI();
   if (G.cutin) drawCutin();
@@ -3806,6 +3810,38 @@ function drawTouchUI() {
     g.textBaseline = 'middle';
     g.fillText(b.label, b.x, b.y + 1);
     g.textBaseline = 'alphabetic';
+  }
+  g.restore();
+}
+
+function drawBossEnter() {
+  const T = G.bossEnterT;
+  const e = Math.min(1, (1.8 - T) / 0.25);
+  const out = Math.min(1, T / 0.35);
+  const k = Math.min(e, out);
+  const bh = 96 * k;
+  g.save();
+  g.fillStyle = '#050407';
+  g.fillRect(0, 0, W, bh);
+  g.fillRect(0, H - bh, W, bh);
+  if (e > 0.4) {
+    const a = Math.min(1, (e - 0.4) / 0.6) * out;
+    g.globalAlpha = a;
+    g.textAlign = 'center';
+    g.font = `700 ${PORTRAIT ? 52 : 58}px ${F_SERIF}`;
+    g.letterSpacing = '16px';
+    g.fillStyle = '#f2f5fc';
+    g.shadowColor = 'rgba(255,60,80,0.55)';
+    g.shadowBlur = 30;
+    g.fillText('鬼 武 者', W / 2 + 8, H * 0.44);
+    g.shadowBlur = 0;
+    g.font = `600 14px ${F_SANS}`;
+    g.letterSpacing = '8px';
+    g.fillStyle = 'rgba(255,120,135,0.9)';
+    g.fillText('斩 将  ·  第 三 阵', W / 2 + 4, H * 0.44 + 40);
+    const lw = 240 * Math.min(1, (e - 0.4) / 0.6);
+    g.fillStyle = 'rgba(255,60,80,0.85)';
+    g.fillRect(W / 2 - lw / 2, H * 0.44 + 62, lw, 2);
   }
   g.restore();
 }
