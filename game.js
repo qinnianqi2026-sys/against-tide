@@ -1084,6 +1084,18 @@ function drawEnemySprite(e) {
     g.beginPath(); g.ellipse(e.x, e.y - 50 * s, 34 * s, 50 * s, 0, 0, TAU); g.fill();
     g.restore();
   }
+  if (e.kind === 'archer' && e.state === 'wind') {
+    const a = 0.10 + 0.12 * Math.abs(Math.sin(G.t * 16));
+    g.save();
+    g.strokeStyle = `rgba(255,80,100,${a})`;
+    g.lineWidth = 1.5;
+    g.setLineDash([7, 7]);
+    g.beginPath();
+    g.moveTo(e.x, e.y - 34);
+    g.lineTo(P.x, P.y - 8);
+    g.stroke();
+    g.restore();
+  }
   const st = Math.max(0, e.spawnT || 0);
   const rise = (st / 0.4) * 26 * depth(e.y);
   const jitter = e.stun > 0 ? (Math.random() - 0.5) * 3 : 0;
@@ -2182,7 +2194,7 @@ function explodeBomber(e) {
 }
 
 function startOniAttack(e, phase) {
-  const pool = phase === 1 ? ['slash'] : phase === 2 ? ['slash', 'charge', 'slash'] : ['slash', 'charge', 'slam', 'slash'];
+  const pool = phase === 1 ? ['slash'] : phase === 2 ? ['slash', 'charge', 'slash'] : ['slash', 'charge', 'slam', 'step', 'slash'];
   const atk = pool[Math.floor(Math.random() * pool.length)];
   e.atk = atk;
   e.hitDone = false;
@@ -2192,11 +2204,21 @@ function startOniAttack(e, phase) {
     e.st = 0.7 - phase * 0.05; e.breakTime = 1.2;
     const dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1;
     e.dashX = dx / d; e.dashY = dy / d;
-  } else { e.st = 0.95; e.breakTime = 1.1; }
+  } else if (atk === 'step') { e.st = 0.5; e.breakTime = 1.0; }
+  else { e.st = 0.95; e.breakTime = 1.1; }
   e.aimX = P.x; e.aimY = P.y;
 }
 
 function oniStrike(e) {
+  if (e.atk === 'step') {
+    ring(e.x, e.y, 10, 110, '#ff3b4e', 2, 0.3);
+    sparks(e.x, e.y - 60, 10, '#ff5f70', 220);
+    e.x = clamp(P.x - P.face * 130, ARENA.x1 + 20, ARENA.x2 - 20);
+    e.y = clamp(P.y + 10, ARENA.y1, ARENA.y2);
+    ring(e.x, e.y, 10, 130, '#ffffff', 2, 0.3);
+    sparks(e.x, e.y - 60, 10, '#ffffff', 220);
+    e.atk = 'slash';
+  }
   e.state = 'strike';
   e.st = e.atk === 'charge' ? 0.4 : 0.18;
   const dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1;
