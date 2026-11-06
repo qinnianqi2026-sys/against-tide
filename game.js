@@ -210,7 +210,7 @@ const SFX = {
 
 /* ---------------- 状态 ---------------- */
 const G = {
-  mode: 'title', paused: false, upgrade: null, weaponPick: null, weapon: 'mingce', weaponName: '名 册', cutin: null, taken: new Set(), eliteDone: false, elite2Done: false, execT: 0, execX: 0, execY: 0, comboPunch: 0, comboBanner: null,
+  mode: 'title', paused: false, upgrade: null, weaponPick: null, weapon: 'mingce', weaponName: '名 册', cutin: null, taken: new Set(), eliteDone: false, elite2Done: false, execT: 0, execX: 0, execY: 0, comboPunch: 0, comboBanner: null, fps: 0,
   t: 0, runT: 0, stage: 1, stageKills: 0, stageQuota: 0, stageClearT: 0, victory: false, score: 0, kills: 0,
   combo: 0, comboT: 0, maxCombo: 0,
   meter: 0,
@@ -4854,7 +4854,9 @@ function drawResult() {
 /* ---------------- 主循环 ---------------- */
 let last = performance.now();
 function frame(now) {
-  const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+  const raw = Math.max(1, now - last);
+  G.fps = G.fps ? G.fps * 0.92 + (1000 / raw) * 0.08 : 60;
+  const dt = Math.min(0.05, Math.max(0, raw / 1000));
   last = now;
   try {
     update(dt);
