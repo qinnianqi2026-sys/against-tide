@@ -470,7 +470,18 @@ const bgD = document.createElement('canvas'); bgD.width = W; bgD.height = H;
 const bgR = document.createElement('canvas'); bgR.width = W; bgR.height = H;
 IMG.normal.onload = () => { bgN.getContext('2d').drawImage(IMG.normal, 0, 0, W, H); };
 IMG.red.onload = () => { bgR.getContext('2d').drawImage(IMG.red, 0, 0, W, H); };
-IMG.dusk.onload = () => { bgD.getContext('2d').drawImage(IMG.dusk, 0, 0, W, H); };
+IMG.dusk.onload = () => {
+  const c = bgD.getContext('2d');
+  const pix = document.createElement('canvas');
+  pix.width = Math.max(2, Math.round(W / 3));
+  pix.height = Math.max(2, Math.round(H / 3));
+  const pc = pix.getContext('2d');
+  pc.imageSmoothingEnabled = true;
+  pc.drawImage(IMG.dusk, 0, 0, pix.width, pix.height);
+  c.imageSmoothingEnabled = false;
+  c.drawImage(pix, 0, 0, W, H);
+  c.imageSmoothingEnabled = true;
+};
 
 /* ---------------- 背景 ---------------- */
 const bg = document.createElement('canvas');
@@ -1062,7 +1073,7 @@ function drawEnemySprite(e) {
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   if (!iw || !ih) return false;
-  const s = (art.h / ih) * depth(e.y) * 0.78;
+  const s = 2;
   const k = e.state === 'wind' ? clamp(1 - e.st / (e.kind === 'brute' ? 0.7 : 0.5), 0, 1) : 0;
   if (k > 0) {
     g.save();
@@ -1434,12 +1445,12 @@ function drawCutout(aL, aR, lean, bob) {
 
 const HERO_FRAMES = { run: [], atk: [] };
 for (let i = 1; i <= 4; i++) {
-  const a = new Image(); a.src = 'art/pixel/hero/run-' + i + '.webp'; HERO_FRAMES.run.push(a);
-  const b = new Image(); b.src = 'art/pixel/hero/atk-' + i + '.webp'; HERO_FRAMES.atk.push(b);
+  const a = new Image(); a.src = 'art/pixel/hero/run-' + i + '-s.webp'; HERO_FRAMES.run.push(a);
+  const b = new Image(); b.src = 'art/pixel/hero/atk-' + i + '-s.webp'; HERO_FRAMES.atk.push(b);
 }
 const HERO_META = {
-  run: [{ax:149,ay:317},{ax:91,ay:317},{ax:146,ay:316},{ax:135,ay:317}],
-  atk: [{ax:63,ay:317},{ax:105,ay:309},{ax:124,ay:309},{ax:89,ay:317}]
+  run: [{ax:23,ay:47},{ax:14,ay:47},{ax:22,ay:47},{ax:20,ay:47}],
+  atk: [{ax:14,ay:47},{ax:13,ay:45},{ax:15,ay:45},{ax:18,ay:47}]
 };
 
 const HERO_PIX = document.createElement('canvas');
@@ -1590,7 +1601,7 @@ function drawCutoutPlayer() {
   const img = HERO_FRAMES[set][idx];
   const m = HERO_META[set][idx];
   if (!img || !img.complete || !img.naturalWidth) return false;
-  const s = (PORTRAIT ? 0.32 : 0.36) * (0.94 + depth(P.y) * 0.06);
+  const s = PORTRAIT ? 2 : 2.2;
   if (P.state === 'dodge') {
     for (let i = 2; i >= 1; i--) {
       g.save();
@@ -1616,12 +1627,12 @@ function drawCutoutPlayer() {
       g.save();
       g.globalCompositeOperation = 'lighter';
       g.strokeStyle = 'rgba(255,255,255,' + (0.20 + 0.30 * Math.sin(e * Math.PI)) + ')';
-      g.lineWidth = 14;
+      g.lineWidth = 2.5;
       g.lineCap = 'round';
-      g.beginPath(); g.arc(0, -150, 104, a0, a1); g.stroke();
+      g.beginPath(); g.arc(0, -22, 16, a0, a1); g.stroke();
       g.strokeStyle = 'rgba(255,150,160,' + (0.10 + 0.18 * Math.sin(e * Math.PI)) + ')';
-      g.lineWidth = 30;
-      g.beginPath(); g.arc(0, -150, 110, a0, a1); g.stroke();
+      g.lineWidth = 5;
+      g.beginPath(); g.arc(0, -22, 17, a0, a1); g.stroke();
       g.restore();
     }
   }
@@ -3043,7 +3054,7 @@ function drawOni(e) {
   else if (e.state === 'break' || e.state === 'roar') bossIdx = 2;
   const bart = BOSS_ART[bossIdx];
   if (bart.img.complete && bart.img.naturalWidth) {
-    const bs = (230 / bart.img.naturalHeight) * depth(e.y);
+    const bs = 3;
     const img = bart.img;
     g.save();
     g.translate(e.x, e.y);
@@ -3481,7 +3492,9 @@ function render() {
     g.translate(-P.x, -P.y);
   }
   if (PORTRAIT) {
+    g.imageSmoothingEnabled = false;
     g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 420, WORLD_W, 900);
+    g.imageSmoothingEnabled = true;
     g.fillStyle = duskScene ? '#1a120f' : '#0e1018';
     g.fillRect(0, 1310, WORLD_W, 400);
     const hz = g.createLinearGradient(0, 400, 0, 580);
@@ -3490,7 +3503,7 @@ function render() {
     g.fillStyle = hz;
     g.fillRect(0, 400, WORLD_W, 180);
   }
-  else g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 330);
+  else { g.imageSmoothingEnabled = false; g.drawImage(duskScene ? groundDusk : groundCanvas, 0, 330); g.imageSmoothingEnabled = true; }
   g.drawImage(backEdge, 0, 380);
   drawProps();
   drawWaves();
@@ -4295,8 +4308,10 @@ function drawCards(title, sub, cards) {
     g.translate(0, (1 - ease) * 18);
     roundRect(r.x, r.y, r.w, r.h, 8); g.fill();
     const hot = G.hoverCard === i;
-    g.strokeStyle = hot ? '#ffd36e' : (isSyn ? 'rgba(255,200,90,0.9)' : (i === 0 ? 'rgba(255,90,105,0.8)' : 'rgba(150,180,230,0.25)'));
-    g.lineWidth = hot ? 3 : (isSyn ? 2 : (i === 0 ? 2 : 1));
+    g.fillStyle = isSyn ? 'rgba(255,190,80,0.9)' : (hot ? '#ffd36e' : 'rgba(255,80,100,0.75)');
+    g.fillRect(r.x, r.y, 4, r.h);
+    g.strokeStyle = hot ? '#ffd36e' : (isSyn ? 'rgba(255,200,90,0.9)' : (i === 0 ? 'rgba(255,90,105,0.7)' : 'rgba(150,180,230,0.22)'));
+    g.lineWidth = hot ? 3 : (isSyn ? 2 : (i === 0 ? 1.5 : 1));
     roundRect(r.x, r.y, r.w, r.h, 8); g.stroke();
 
     if (PORTRAIT) {
