@@ -1450,7 +1450,7 @@ for (let i = 1; i <= 4; i++) {
 }
 const HERO_META = {
   run: [{ax:23,ay:47},{ax:14,ay:47},{ax:22,ay:47},{ax:20,ay:47}],
-  atk: [{ax:14,ay:47},{ax:13,ay:45},{ax:15,ay:45},{ax:18,ay:47}]
+  atk: [{ax:11,ay:46},{ax:22,ay:46},{ax:18,ay:47},{ax:11,ay:47}]
 };
 
 const HERO_PIX = document.createElement('canvas');
@@ -4108,12 +4108,14 @@ function drawTitlePortrait() {
   g.fillStyle = 'rgba(6,6,10,0.55)';
   g.fillRect(0, 0, W, H);
   g.textAlign = 'center';
-  text('斩 名 录', W / 2, 210, { size: 104, family: F_SERIF, weight: 700, color: '#f2f5fc', align: 'center', spacing: 14, glow: 30, glowColor: 'rgba(255,70,90,0.45)' });
-  text('T H E   N A M E   B L A D E', W / 2, 266, { size: 13, color: 'rgba(170,190,220,0.7)', align: 'center', spacing: 5 });
+  text('斩 名 录', W / 2, 202, { size: 110, family: F_SERIF, weight: 700, color: '#f2f5fc', align: 'center', spacing: 14, glow: 30, glowColor: 'rgba(255,70,90,0.45)' });
+  text('T H E   N A M E   B L A D E', W / 2, 262, { size: 15, color: 'rgba(170,190,220,0.7)', align: 'center', spacing: 5 });
 
-  text('溯 · 十九 · 被逐出师门的剑客', W / 2, 388, { size: 15, family: F_SERIF, color: 'rgba(220,228,245,0.72)', align: 'center', spacing: 3 });
-  text('三阵。', W / 2, 500, { size: 26, family: F_SERIF, color: 'rgba(238,242,252,0.95)', align: 'center', spacing: 3 });
-  text('走到鬼武者面前，然后斩了他。', W / 2, 552, { size: 22, family: F_SERIF, color: 'rgba(225,232,248,0.8)', align: 'center', spacing: 2 });
+  g.fillStyle = 'rgba(255,70,90,0.7)';
+  g.fillRect(W / 2 - 90, 322, 180, 1);
+  text('溯 · 十九 · 被逐出师门的剑客', W / 2, 372, { size: 16, family: F_SANS, color: 'rgba(220,228,245,0.7)', align: 'center', spacing: 3 });
+  text('三阵。', W / 2, 486, { size: 36, family: F_SERIF, color: 'rgba(242,245,252,0.97)', align: 'center', spacing: 6, glow: 18, glowColor: 'rgba(255,80,100,0.35)' });
+  text('斩尽拦路者，取鬼武者首级。', W / 2, 546, { size: 21, family: F_SANS, color: 'rgba(225,232,248,0.82)', align: 'center', spacing: 2 });
 
   const rows = IS_TOUCH ? [
     ['左侧', '拖动移动'],
@@ -4167,7 +4169,7 @@ function drawTitle() {
   text('溯 · 十 九 · 被 逐 出 师 门 的 剑 客', 150, 370, { size: 13, color: 'rgba(200,215,240,0.8)', spacing: 3 });
 
   text('三阵。', 150, 420, { size: 18, family: F_SERIF, color: 'rgba(225,232,248,0.85)', spacing: 3 });
-  text('走到鬼武者面前，然后斩了他。', 150, 450, { size: 18, family: F_SERIF, color: 'rgba(225,232,248,0.85)', spacing: 3 });
+  text('斩尽拦路者，取鬼武者首级。', 150, 450, { size: 18, family: F_SERIF, color: 'rgba(225,232,248,0.85)', spacing: 3 });
 
   const rows = IS_TOUCH ? [
     ['左侧', '拖动移动'],
@@ -4281,17 +4283,17 @@ function drawCards(title, sub, cards) {
   g.fillStyle = 'rgba(4,5,10,0.86)';
   g.fillRect(0, 0, W, H);
   g.textAlign = 'center';
-  g.font = `700 ${PORTRAIT ? 30 : 34}px ${F_SERIF}`;
+  g.font = `700 ${PORTRAIT ? 36 : 40}px ${F_SERIF}`;
   g.letterSpacing = '10px';
   g.fillStyle = '#f2f5fc';
   g.shadowColor = 'rgba(120,180,255,0.6)';
   g.shadowBlur = 20;
   g.fillText(title, W / 2 + 5, PORTRAIT ? 130 : 150);
   g.shadowBlur = 0;
-  g.font = `400 11px ${F_SANS}`;
+  g.font = `400 14px ${F_SANS}`;
   g.letterSpacing = '5px';
-  g.fillStyle = 'rgba(200,212,238,0.55)';
-  g.fillText(sub, W / 2, PORTRAIT ? 162 : 182);
+  g.fillStyle = 'rgba(205,215,240,0.62)';
+  g.fillText(sub, W / 2, PORTRAIT ? 170 : 188);
 
   const rects = cardRects();
   cards.forEach((c, i) => {
@@ -4322,17 +4324,17 @@ function drawCards(title, sub, cards) {
         g.fillStyle = '#ffc25a';
         g.fillText('组 合', r.x + 28, r.y + 30);
       }
-      g.font = `700 24px ${F_SERIF}`;
+      g.font = `700 28px ${F_SERIF}`;
       g.letterSpacing = '4px';
       g.fillStyle = isSyn ? '#ffd98a' : '#f0f3fa';
       g.fillText(c.name, r.x + 28, r.y + 70);
       if (c.type) {
-        g.font = `600 11px ${F_SANS}`;
+        g.font = `600 13px ${F_SANS}`;
         g.letterSpacing = '2px';
         g.fillStyle = 'rgba(160,220,255,0.85)';
         g.fillText(c.type, r.x + 28, r.y + 96);
       }
-      g.font = `400 13px ${F_SANS}`;
+      g.font = `400 15px ${F_SANS}`;
       g.letterSpacing = '1px';
       g.fillStyle = 'rgba(200,215,240,0.75)';
       g.fillText(c.desc, r.x + 28, r.y + 124);
@@ -4349,7 +4351,7 @@ function drawCards(title, sub, cards) {
         g.fillStyle = '#ffc25a';
         g.fillText('组 合', r.x + r.w / 2, r.y + 46);
       }
-      g.font = `700 26px ${F_SERIF}`;
+      g.font = `700 30px ${F_SERIF}`;
       g.letterSpacing = '6px';
       g.fillStyle = isSyn ? '#ffd98a' : '#f0f3fa';
       g.fillText(c.name, r.x + r.w / 2, r.y + 86);
@@ -4359,9 +4361,9 @@ function drawCards(title, sub, cards) {
         g.fillStyle = 'rgba(160,220,255,0.85)';
         g.fillText(c.type, r.x + r.w / 2, r.y + 116);
       }
-      g.font = `400 14px ${F_SANS}`;
+      g.font = `400 16px ${F_SANS}`;
       g.letterSpacing = '2px';
-      g.fillStyle = 'rgba(200,215,240,0.75)';
+      g.fillStyle = 'rgba(205,218,242,0.8)';
       g.fillText(c.desc, r.x + r.w / 2, r.y + 152);
       g.font = `700 12px ${F_NUM}`;
       g.letterSpacing = '2px';
