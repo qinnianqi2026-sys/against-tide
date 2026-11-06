@@ -125,6 +125,10 @@ function ambient() {
 
 const SFX = {
   slash() { noiseHit(0.12, 0.14, 2200, 'bandpass', 0, 1.2, 600); },
+  combo() {
+    tone(520, 0.16, { type: 'triangle', vol: 0.08, to: 980 });
+    tone(780, 0.22, { type: 'sine', vol: 0.05, to: 1180, delay: 0.04 });
+  },
   hit() {
     noiseHit(0.09, 0.28, 900, 'bandpass', 0, 0.9);
     tone(190, 0.12, { type: 'square', vol: 0.05, to: 90 });
@@ -202,7 +206,7 @@ const SFX = {
 
 /* ---------------- 状态 ---------------- */
 const G = {
-  mode: 'title', paused: false, upgrade: null, weaponPick: null, weapon: 'mingce', weaponName: '名 册', cutin: null, taken: new Set(), eliteDone: false, elite2Done: false, execT: 0, execX: 0, execY: 0,
+  mode: 'title', paused: false, upgrade: null, weaponPick: null, weapon: 'mingce', weaponName: '名 册', cutin: null, taken: new Set(), eliteDone: false, elite2Done: false, execT: 0, execX: 0, execY: 0, comboPunch: 0, comboBanner: null,
   t: 0, runT: 0, stage: 1, stageKills: 0, stageQuota: 0, stageClearT: 0, victory: false, score: 0, kills: 0,
   combo: 0, comboT: 0, maxCombo: 0,
   meter: 0,
@@ -1908,7 +1912,16 @@ function hitEnemy(e, dmg, ang, launch, noChain, noExplode) {
   }
   G.combo++;
   G.comboT = 3.0;
+  G.comboPunch = 1;
   G.maxCombo = Math.max(G.maxCombo, G.combo);
+  {
+    const ms = { 10: '十 连 斩', 20: '二 十 连', 30: '三 十 连', 50: '五 十 连', 100: '百 人 斩' };
+    if (ms[G.combo]) {
+      G.comboBanner = { text: ms[G.combo], t: 0 };
+      addFlash('#ffd36e', 0.08);
+      if (SFX.combo) SFX.combo();
+    }
+  }
   G.meter = Math.min(100, G.meter + 0.9 * P.ultGainMul);
   G.score += Math.round(6 * mult());
   sparks(e.x, e.y - 46 * e.scale, 9, '#ffffff', 320, ang, 1.5);
@@ -3758,6 +3771,7 @@ function render() {
     g.drawImage(fgGrass, 0, H - 190);
     g.drawImage(fgGrass2, 0, H - 120);
     drawHUD();
+    drawComboBanner();
     if (G.bossEnterT > 0) drawBossEnter();
   }
   if (IS_TOUCH && G.mode === 'play') drawTouchUI();
@@ -3869,6 +3883,29 @@ function drawTouchUI() {
   g.restore();
 }
 
+function drawComboBanner() {
+  const b = G.comboBanner;
+  if (!b) return;
+  const k = b.t / 0.9;
+  const a = k < 0.12 ? k / 0.12 : (1 - Math.max(0, (k - 0.55) / 0.45));
+  const s = 0.85 + Math.min(0.2, k * 0.9);
+  g.save();
+  g.globalAlpha = clamp(a, 0, 1);
+  g.textAlign = 'center';
+  g.translate(W / 2, H * 0.30);
+  g.scale(s, s);
+  g.font = `700 ${PORTRAIT ? 42 : 40}px ${F_SERIF}`;
+  g.letterSpacing = '12px';
+  g.fillStyle = '#ffe6b0';
+  g.shadowColor = '#ff8a4d';
+  g.shadowBlur = 26;
+  g.fillText(b.text, 6, 0);
+  g.shadowBlur = 0;
+  g.fillStyle = 'rgba(255,220,190,0.5)';
+  g.fillRect(-90, 16, 180, 1);
+  g.restore();
+}
+
 function drawBossEnter() {
   const T = G.bossEnterT;
   const e = Math.min(1, (1.8 - T) / 0.25);
@@ -3957,13 +3994,17 @@ function drawHUD() {
   if (G.combo > 1) {
     const rate = ratingOf(G.combo);
     const col = RATE_COLOR[rate];
-    const pulse = 1 + Math.min(0.25, G.combo / 900);
+    const pulse = 1 + Math.min(0.25, G.combo / 900) + G.comboPunch * 0.14;
     g.save();
     g.textAlign = 'right';
     g.translate(W - 54, 168 + (IS_TOUCH ? 30 : 0));
     g.scale(pulse, pulse);
     text(String(G.combo), 0, 0, { size: 44, family: F_NUM, weight: 700, color: col, align: 'right', glow: 16 });
     text('H I T S', -4, 22, { size: 11, color: 'rgba(230,240,255,0.7)', align: 'right', spacing: 3 });
+    g.fillStyle = 'rgba(255,255,255,0.12)';
+    g.fillRect(-104, 34, 104, 3);
+    g.fillStyle = col;
+    g.fillRect(-104, 34, 104 * clamp(G.comboT / 3, 0, 1), 3);
     g.restore();
 
     g.save();
