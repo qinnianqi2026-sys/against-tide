@@ -4402,7 +4402,7 @@ function drawCards(title, sub, cards) {
 }
 
 function pauseRowRect(i) {
-  return { x: W / 2 - 170, y: H / 2 + 18 + i * 56, w: 340, h: 44 };
+  return { x: W / 2 - 170, y: H / 2 - 40 + i * 58, w: 340, h: 46 };
 }
 function pauseAction(i) {
   if (i === 0) G.paused = false;
@@ -4427,33 +4427,52 @@ function drawTalent() {
 
 function drawPause() {
   g.save();
-  g.fillStyle = 'rgba(4,5,10,0.76)';
+  const bg = g.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, 'rgba(5,6,12,0.86)');
+  bg.addColorStop(1, 'rgba(3,4,8,0.92)');
+  g.fillStyle = bg;
   g.fillRect(0, 0, W, H);
+
+  const pw = PORTRAIT ? 460 : 420, ph = 430;
+  const px = W / 2 - pw / 2, py = H / 2 - 210;
+  g.fillStyle = 'rgba(16,14,24,0.72)';
+  roundRect(px, py, pw, ph, 14); g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.08)';
+  g.lineWidth = 1;
+  roundRect(px, py, pw, ph, 14); g.stroke();
+  g.fillStyle = 'rgba(255,70,90,0.75)';
+  g.fillRect(px + 24, py, pw - 48, 2);
+
   g.textAlign = 'center';
   g.font = `700 40px ${F_SERIF}`;
   g.letterSpacing = '14px';
   g.fillStyle = '#f0f3fa';
-  g.shadowColor = 'rgba(120,180,255,0.7)';
-  g.shadowBlur = 22;
-  g.fillText('暂 停', W / 2 + 7, H / 2 - 46);
+  g.shadowColor = 'rgba(120,180,255,0.6)';
+  g.shadowBlur = 18;
+  g.fillText('暂 停', W / 2 + 7, py + 62);
   g.shadowBlur = 0;
+  g.font = `400 11px ${F_SANS}`;
+  g.letterSpacing = '5px';
+  g.fillStyle = 'rgba(190,205,235,0.5)';
+  g.fillText('PAUSED', W / 2, py + 84);
+
   const labels = ['继 续', '重 新 开 始', muted ? '音 效 ： 关' : '音 效 ： 开', '返 回 标 题'];
   for (let i = 0; i < labels.length; i++) {
     const r = pauseRowRect(i);
-    g.fillStyle = i === 0 ? 'rgba(255,90,110,0.16)' : 'rgba(255,255,255,0.05)';
+    g.fillStyle = i === 0 ? 'rgba(255,90,110,0.18)' : 'rgba(255,255,255,0.05)';
     roundRect(r.x, r.y, r.w, r.h, 8); g.fill();
-    g.strokeStyle = i === 0 ? 'rgba(255,110,130,0.7)' : 'rgba(160,190,230,0.22)';
+    g.strokeStyle = i === 0 ? 'rgba(255,110,130,0.7)' : 'rgba(160,190,230,0.18)';
     g.lineWidth = 1;
     roundRect(r.x, r.y, r.w, r.h, 8); g.stroke();
-    g.font = `600 15px ${F_SANS}`;
+    g.font = `600 16px ${F_SANS}`;
     g.letterSpacing = '6px';
     g.fillStyle = i === 0 ? '#ffe8eb' : 'rgba(220,230,250,0.82)';
-    g.fillText(labels[i], W / 2, r.y + 29);
+    g.fillText(labels[i], W / 2, r.y + 30);
   }
-  g.font = `400 10px ${F_SANS}`;
+  g.font = `400 11px ${F_SANS}`;
   g.letterSpacing = '4px';
-  g.fillStyle = 'rgba(200,212,238,0.45)';
-  g.fillText('ESC 继续   ·   M 静音', W / 2, H / 2 + 268);
+  g.fillStyle = 'rgba(200,212,238,0.4)';
+  g.fillText('ESC 继续   ·   M 静音', W / 2, py + ph - 24);
   g.restore();
 }
 
