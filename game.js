@@ -21,9 +21,12 @@ const g = canvas.getContext('2d');
 const DPR = Math.min(1.25, window.devicePixelRatio || 1);
 canvas.width = W * DPR;
 canvas.height = H * DPR;
+let lastVW = 0, lastVH = 0;
 function resizeCanvas() {
   const vw = window.innerWidth, vh = window.innerHeight;
   const portraitNow = vh > vw;
+  if (BOOTED && portraitNow === PORTRAIT && Math.abs(vw - lastVW) < 4 && Math.abs(vh - lastVH) < 140) return;
+  lastVW = vw; lastVH = vh;
   if (portraitNow !== PORTRAIT) {
     PORTRAIT = portraitNow;
     if (PORTRAIT) {
@@ -1445,12 +1448,12 @@ function drawCutout(aL, aR, lean, bob) {
 
 const HERO_FRAMES = { run: [], atk: [] };
 for (let i = 1; i <= 4; i++) {
-  const a = new Image(); a.src = 'art/pixel/hero/run-' + i + '-s.webp'; HERO_FRAMES.run.push(a);
-  const b = new Image(); b.src = 'art/pixel/hero/atk-' + i + '-s.webp'; HERO_FRAMES.atk.push(b);
+  const a = new Image(); a.src = 'art/pixel/hero/run-' + i + '-m.webp'; HERO_FRAMES.run.push(a);
+  const b = new Image(); b.src = 'art/pixel/hero/atk-' + i + '-m.webp'; HERO_FRAMES.atk.push(b);
 }
 const HERO_META = {
-  run: [{ax:23,ay:47},{ax:14,ay:47},{ax:22,ay:47},{ax:20,ay:47}],
-  atk: [{ax:11,ay:46},{ax:22,ay:46},{ax:18,ay:47},{ax:11,ay:47}]
+  run: [{ax:46,ay:94},{ax:29,ay:94},{ax:46,ay:94},{ax:42,ay:94}],
+  atk: [{ax:24,ay:94},{ax:44,ay:94},{ax:36,ay:94},{ax:22,ay:94}]
 };
 
 const HERO_PIX = document.createElement('canvas');
@@ -1601,7 +1604,7 @@ function drawCutoutPlayer() {
   const img = HERO_FRAMES[set][idx];
   const m = HERO_META[set][idx];
   if (!img || !img.complete || !img.naturalWidth) return false;
-  const s = PORTRAIT ? 2 : 2.2;
+  const s = 1;
   if (P.state === 'dodge') {
     for (let i = 2; i >= 1; i--) {
       g.save();
@@ -1627,12 +1630,12 @@ function drawCutoutPlayer() {
       g.save();
       g.globalCompositeOperation = 'lighter';
       g.strokeStyle = 'rgba(255,255,255,' + (0.20 + 0.30 * Math.sin(e * Math.PI)) + ')';
-      g.lineWidth = 2.5;
-      g.lineCap = 'round';
-      g.beginPath(); g.arc(0, -22, 16, a0, a1); g.stroke();
-      g.strokeStyle = 'rgba(255,150,160,' + (0.10 + 0.18 * Math.sin(e * Math.PI)) + ')';
       g.lineWidth = 5;
-      g.beginPath(); g.arc(0, -22, 17, a0, a1); g.stroke();
+      g.lineCap = 'round';
+      g.beginPath(); g.arc(0, -44, 32, a0, a1); g.stroke();
+      g.strokeStyle = 'rgba(255,150,160,' + (0.10 + 0.18 * Math.sin(e * Math.PI)) + ')';
+      g.lineWidth = 10;
+      g.beginPath(); g.arc(0, -44, 34, a0, a1); g.stroke();
       g.restore();
     }
   }
