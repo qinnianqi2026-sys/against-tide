@@ -347,9 +347,9 @@ canvas.addEventListener('pointerdown', (e) => {
   const b = TBTN.find(t => Math.hypot(p.x - t.x, p.y - t.y) < t.r + 14);
   if (b) {
     e.preventDefault();
-    if (b.id === 'atk') { attackPress(); b.touchId = e.pointerId; }
-    else if (b.id === 'dash') dash();
-    else if (b.id === 'ult') tryUlt();
+    if (b.id === 'atk') { attackPress(); b.touchId = e.pointerId; buzz(6); }
+    else if (b.id === 'dash') { dash(); buzz(10); }
+    else if (b.id === 'ult') { tryUlt(); buzz(20); }
     else if (b.id === 'pause') togglePause();
     return;
   }
@@ -359,6 +359,15 @@ canvas.addEventListener('pointerdown', (e) => {
   }
 });
 canvas.addEventListener('pointermove', (e) => {
+  if (G.mode === 'play' && (G.talent || G.upgrade || G.weaponPick) && e.pointerType !== 'touch') {
+    const p = canvasPos(e);
+    const rects = cardRects();
+    G.hoverCard = -1;
+    for (let i = 0; i < 3; i++) {
+      const r = rects[i];
+      if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) G.hoverCard = i;
+    }
+  }
   if (!joy.active || e.pointerId !== joy.id) return;
   const p = canvasPos(e);
   const dx = p.x - joy.ox, dy = p.y - joy.oy;
@@ -1581,7 +1590,7 @@ function drawCutoutPlayer() {
   const img = HERO_FRAMES[set][idx];
   const m = HERO_META[set][idx];
   if (!img || !img.complete || !img.naturalWidth) return false;
-  const s = (PORTRAIT ? 0.32 : 0.36) * depth(P.y);
+  const s = (PORTRAIT ? 0.32 : 0.36) * (0.94 + depth(P.y) * 0.06);
   if (P.state === 'dodge') {
     for (let i = 2; i >= 1; i--) {
       g.save();
@@ -1662,6 +1671,8 @@ function roundRect(x, y, w, h, r) {
   g.arcTo(x, y, x + w, y, r);
   g.closePath();
 }
+
+function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
 function addShake(v) { G.shake = Math.max(G.shake, v); }
 function addFlash(color, a) { G.flashColor = color; G.flash = Math.max(G.flash, a); }
@@ -2388,12 +2399,12 @@ function updateEnemies(dt) {
 /* ---------------- 更新 ---------------- */
 const BOSS_STAGE = 4;
 const STAGES = [
-  { title: '第 一 阵 · 足 轻', quota: 44, eliteAt: 18, pool: ['grunt', 'grunt', 'crawler', 'shield'],
-    elite: ['shield', 'shield', 'archer', 'archer', 'archer', 'archer'], eliteAt2: 34, elite2: ['bomber', 'bomber', 'archer', 'archer', 'shield', 'grunt', 'grunt'] },
-  { title: '第 二 阵 · 弓 火', quota: 60, eliteAt: 26, pool: ['grunt', 'crawler', 'archer', 'bomber', 'shield', 'archer'],
-    elite: ['bomber', 'bomber', 'bomber', 'archer', 'archer', 'shield'], eliteAt2: 40, elite2: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'grunt', 'grunt'] },
-  { title: '第 三 阵 · 黄 泉', quota: 60, eliteAt: 26, pool: ['crawler', 'archer', 'bomber', 'shield', 'shadow', 'bomber'],
-    elite: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'archer'], eliteAt2: 46, elite2: ['shield', 'shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'grunt'] },
+  { title: '第 一 阵 · 足 轻', quota: 80, eliteAt: 30, pool: ['grunt', 'grunt', 'crawler', 'shield'],
+    elite: ['shield', 'shield', 'archer', 'archer', 'archer', 'archer'], eliteAt2: 55, elite2: ['bomber', 'bomber', 'archer', 'archer', 'shield', 'grunt', 'grunt'] },
+  { title: '第 二 阵 · 弓 火', quota: 100, eliteAt: 35, pool: ['grunt', 'crawler', 'archer', 'bomber', 'shield', 'archer'],
+    elite: ['bomber', 'bomber', 'bomber', 'archer', 'archer', 'shield'], eliteAt2: 65, elite2: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'grunt', 'grunt'] },
+  { title: '第 三 阵 · 黄 泉', quota: 120, eliteAt: 40, pool: ['crawler', 'archer', 'bomber', 'shield', 'shadow', 'bomber'],
+    elite: ['shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'archer'], eliteAt2: 75, elite2: ['shield', 'shield', 'shield', 'bomber', 'bomber', 'archer', 'archer', 'grunt'] },
   { title: '第 四 阵 · 鬼 武 者', boss: true }
 ];
 
@@ -2438,13 +2449,13 @@ function offerWeapon() {
   G.paused = true;
 }
 
-function offerTalent() {
+function offerTalent(next) {
   const pool = TALENTS.slice();
   const opts = [];
   while (opts.length < 3 && pool.length) {
     opts.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   }
-  G.talent = { opts };
+  G.talent = { opts, next: next || 1 };
   G.cardOpenAt = performance.now();
   G.paused = true;
 }
@@ -2456,7 +2467,9 @@ function chooseCard(i) {
     G.weapon = w.id;
     G.weaponName = w.name;
     G.weaponPick = null;
-    offerTalent();
+    G.paused = false;
+    G.tut = 5.2;
+    startStage(1, false);
     return;
   }
   if (G.talent) {
@@ -2464,10 +2477,11 @@ function chooseCard(i) {
     if (!t) return;
     t.apply();
     G.talentName = t.name;
+    const nxt = G.talent.next || 1;
     G.talent = null;
     G.paused = false;
-    G.tut = 5.2;
-    startStage(1, false);
+    G.tut = 4.0;
+    startStage(nxt, nxt < BOSS_STAGE);
     return;
   }
   if (G.upgrade) {
@@ -2550,8 +2564,9 @@ function updateStage(dt) {
     }
   } else {
     G.stageClearT += dt;
-    if (G.stageClearT > 0.9 && !G.upgrade) {
-      offerUpgrade(G.stage + 1);
+    if (G.stageClearT > 0.9 && !G.upgrade && !G.talent) {
+      if (G.stage === 1 && !G.talentName) offerTalent(2);
+      else offerUpgrade(G.stage + 1);
     }
   }
   if (!G.elite2Done && st.elite2 && G.stageKills >= st.eliteAt2) {
@@ -2660,6 +2675,8 @@ function updatePlayer(dt) {
     if (!P.charged && P.holdT >= 0.42 && P.attackT <= 0) {
       P.charged = true;
       attack(true);
+    } else if (P.charged && P.attackT <= 0 && P.dashT <= 0 && !G.ult && !G.paused) {
+      attack(false);
     }
   }
 
@@ -3799,11 +3816,12 @@ function drawTouchUI() {
     }
     const pressed = b.touchId != null;
     const ready = b.id === 'ult' && G.meter >= 100 && !G.ult && !G.cutin;
-    g.fillStyle = pressed ? 'rgba(255,90,110,0.35)' : 'rgba(10,14,24,0.45)';
-    g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.fill();
+    const br = pressed ? b.r * 1.06 : b.r;
+    g.fillStyle = pressed ? 'rgba(255,90,110,0.5)' : 'rgba(10,14,24,0.45)';
+    g.beginPath(); g.arc(b.x, b.y, br, 0, TAU); g.fill();
     g.strokeStyle = ready ? '#ffd36e' : (pressed ? 'rgba(255,140,150,0.9)' : 'rgba(170,200,240,0.35)');
     g.lineWidth = ready ? 2.5 : 1.5;
-    g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.stroke();
+    g.beginPath(); g.arc(b.x, b.y, br, 0, TAU); g.stroke();
     g.fillStyle = ready ? '#ffd36e' : 'rgba(230,240,255,0.85)';
     g.font = `700 ${b.id === 'atk' ? 34 : 19}px ${F_SERIF}`;
     g.textAlign = 'center';
@@ -4176,10 +4194,10 @@ function drawCutin() {
   const k = clamp(c.t / c.dur, 0, 1);
   const e = easeOut(Math.min(1, k * 2.2));
   const a = Math.min(1, k * 5) * (1 - Math.max(0, (k - 0.9) / 0.1));
-  const bandH = 470;
+  const bandH = Math.round((PORTRAIT ? 300 : 380));
   const by = (H - bandH) / 2;
   g.save();
-  g.globalAlpha = a * 0.62;
+  g.globalAlpha = a * 0.18;
   g.fillStyle = '#050307';
   g.fillRect(0, 0, W, H);
   g.globalAlpha = a;
@@ -4200,9 +4218,9 @@ function drawCutin() {
   g.fillStyle = 'rgba(255,59,78,0.85)';
   g.fillRect(0, by - 2, W, 2);
   g.fillRect(0, by + bandH, W, 2);
-  g.fillStyle = 'rgba(4,2,5,0.82)';
-  g.fillRect(0, 0, W, by);
-  g.fillRect(0, by + bandH, W, H - by - bandH);
+  g.fillStyle = 'rgba(4,2,5,0.42)';
+  g.fillRect(0, 0, W, Math.min(by, 140));
+  g.fillRect(0, by + bandH, W, Math.min(H - by - bandH, 140));
 
   // 左侧压暗 + 文案
   const grad = g.createLinearGradient(0, 0, 620, 0);
@@ -4270,10 +4288,15 @@ function drawCards(title, sub, cards) {
     g.fillStyle = 'rgba(18,20,32,0.94)';
     g.save();
     g.globalAlpha = g.globalAlpha * ease;
+    const hov = G.hoverCard === i ? 1.03 : 1;
+    g.translate(r.x + r.w / 2, r.y + r.h / 2);
+    g.scale(hov, hov);
+    g.translate(-(r.x + r.w / 2), -(r.y + r.h / 2));
     g.translate(0, (1 - ease) * 18);
     roundRect(r.x, r.y, r.w, r.h, 8); g.fill();
-    g.strokeStyle = isSyn ? 'rgba(255,200,90,0.9)' : (i === 0 ? 'rgba(255,90,105,0.8)' : 'rgba(150,180,230,0.25)');
-    g.lineWidth = isSyn ? 2 : (i === 0 ? 2 : 1);
+    const hot = G.hoverCard === i;
+    g.strokeStyle = hot ? '#ffd36e' : (isSyn ? 'rgba(255,200,90,0.9)' : (i === 0 ? 'rgba(255,90,105,0.8)' : 'rgba(150,180,230,0.25)'));
+    g.lineWidth = hot ? 3 : (isSyn ? 2 : (i === 0 ? 2 : 1));
     roundRect(r.x, r.y, r.w, r.h, 8); g.stroke();
 
     if (PORTRAIT) {
