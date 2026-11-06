@@ -672,6 +672,42 @@ backEdge.width = WORLD_W; backEdge.height = 130;
   }
 }
 
+// 击杀碎块
+const shards = [];
+function spawnShards(x, y, n, col) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * TAU, sp = rnd(60, 220);
+    shards.push({
+      x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rnd(40, 120),
+      life: rnd(0.35, 0.7), max: 0.7, size: rnd(2, 5), rot: Math.random() * TAU,
+      vr: rnd(-8, 8), col
+    });
+  }
+}
+function updateShards(dt) {
+  for (let i = shards.length - 1; i >= 0; i--) {
+    const d = shards[i];
+    d.life -= dt;
+    if (d.life <= 0) { shards.splice(i, 1); continue; }
+    d.vy += 620 * dt;
+    d.x += d.vx * dt;
+    d.y += d.vy * dt;
+    d.rot += d.vr * dt;
+  }
+}
+function drawShards() {
+  for (const d of shards) {
+    const a = Math.min(1, d.life / 0.25);
+    g.save();
+    g.globalAlpha = a;
+    g.translate(d.x, d.y);
+    g.rotate(d.rot);
+    g.fillStyle = d.col;
+    g.fillRect(-d.size / 2, -d.size / 2, d.size, d.size);
+    g.restore();
+  }
+}
+
 // 飘火星（屏幕空间）
 const embers = [];
 function resetEmber(e) {
@@ -1855,6 +1891,7 @@ function killEnemy(e, ang, noExplode) {
   e.dead = true;
   e.deadT = 0;
   e.hitFlash = 0;
+  spawnShards(e.x, e.y - 30 * (e.scale || 1), 9, e.kind === 'oni' ? '#ffd36e' : '#9fb4d8');
   if (P.lifesteal > 0) P.hp = Math.min(P.maxHp, P.hp + P.lifesteal);
   if (!noExplode && P.shatter && e.slowT > 0) {
     ring(e.x, e.y - 30, 10, 80, '#9fe6ff', 3, 0.28);
@@ -2110,6 +2147,7 @@ function explodeBomber(e) {
   e.dead = true;
   e.deadT = 0;
   e.hitFlash = 0;
+  spawnShards(e.x, e.y - 30 * (e.scale || 1), 9, e.kind === 'oni' ? '#ffd36e' : '#9fb4d8');
   if (ang != null) {
     e.kx = Math.cos(ang) * 620;
     e.ky = Math.sin(ang) * 360;
@@ -2396,6 +2434,7 @@ const UPGRADES = [
 
 function offerWeapon() {
   G.weaponPick = { opts: WEAPONS.slice() };
+  G.cardOpenAt = performance.now();
   G.paused = true;
 }
 
@@ -2406,6 +2445,7 @@ function offerTalent() {
     opts.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   }
   G.talent = { opts };
+  G.cardOpenAt = performance.now();
   G.paused = true;
 }
 
@@ -2541,6 +2581,7 @@ function update(dt) {
   updateFX(dt);
   if (G.execT > 0) G.execT = Math.max(0, G.execT - dt);
   updateEmbers(dt);
+  updateShards(dt);
   updateWaves(dt);
   updateWeather(dt);
   G.redMix = lerp(G.redMix, (G.bloodMoon && G.mode !== 'title') ? 1 : 0, 1 - Math.exp(-1.6 * dt));
@@ -3655,6 +3696,7 @@ function render() {
 
   if (G.mode === 'title') { drawTitle(); return; }
   if (G.mode === 'play') {
+    drawShards();
     drawEmbers();
     g.drawImage(fgGrass, 0, H - 190);
     g.drawImage(fgGrass2, 0, H - 120);
@@ -4166,6 +4208,9 @@ function cardRects() {
 
 function drawCards(title, sub, cards) {
   g.save();
+  const openK = clamp((performance.now() - (G.cardOpenAt || 0)) / 170, 0, 1);
+  const ease = 1 - Math.pow(1 - openK, 3);
+  g.globalAlpha = 0.35 + 0.65 * ease;
   g.fillStyle = 'rgba(4,5,10,0.86)';
   g.fillRect(0, 0, W, H);
   g.textAlign = 'center';
@@ -4187,6 +4232,9 @@ function drawCards(title, sub, cards) {
     const isSyn = !!c.badge;
     g.save();
     g.fillStyle = 'rgba(18,20,32,0.94)';
+    g.save();
+    g.globalAlpha = g.globalAlpha * ease;
+    g.translate(0, (1 - ease) * 18);
     roundRect(r.x, r.y, r.w, r.h, 8); g.fill();
     g.strokeStyle = isSyn ? 'rgba(255,200,90,0.9)' : (i === 0 ? 'rgba(255,90,105,0.8)' : 'rgba(150,180,230,0.25)');
     g.lineWidth = isSyn ? 2 : (i === 0 ? 2 : 1);
@@ -4218,6 +4266,7 @@ function drawCards(title, sub, cards) {
       g.font = `700 18px ${F_NUM}`;
       g.fillStyle = 'rgba(255,140,150,0.9)';
       g.fillText('[' + (i + 1) + ']', r.x + r.w - 26, r.y + 74);
+      g.restore();
     } else {
       g.textAlign = 'center';
       if (isSyn) {
@@ -4244,6 +4293,7 @@ function drawCards(title, sub, cards) {
       g.letterSpacing = '2px';
       g.fillStyle = 'rgba(255,140,150,0.9)';
       g.fillText('[' + (i + 1) + ']', r.x + r.w / 2, r.y + 208);
+      g.restore();
     }
     g.restore();
   });
