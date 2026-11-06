@@ -130,17 +130,21 @@ const SFX = {
     tone(780, 0.22, { type: 'sine', vol: 0.05, to: 1180, delay: 0.04 });
   },
   hit() {
-    noiseHit(0.09, 0.28, 900, 'bandpass', 0, 0.9);
-    tone(190, 0.12, { type: 'square', vol: 0.05, to: 90 });
-    tone(90, 0.16, { type: 'sine', vol: 0.16, to: 50 });
+    const p = 1 + rnd(-0.07, 0.07);
+    noiseHit(0.09, 0.28, 900 * p, 'bandpass', 0, 0.9);
+    tone(190 * p, 0.12, { type: 'square', vol: 0.05, to: 90 });
+    tone(92, 0.17, { type: 'sine', vol: 0.17, to: 48 });
+    tone(2350 * p, 0.035, { type: 'triangle', vol: 0.028, to: 1700 });
   },
   thump(v = 1) {
     tone(62, 0.14, { type: 'sine', vol: 0.2 * v, to: 36 });
     noiseHit(0.12, 0.16 * v, 300, 'lowpass', 0, 0.8);
   },
   kill() {
-    noiseHit(0.16, 0.20, 500, 'lowpass', 0, 0.7);
-    tone(140, 0.20, { type: 'sine', vol: 0.12, to: 60 });
+    noiseHit(0.2, 0.24, 460, 'lowpass', 0, 0.75);
+    tone(150, 0.22, { type: 'sine', vol: 0.14, to: 58 });
+    tone(70, 0.3, { type: 'sine', vol: 0.1, to: 34 });
+    tone(900, 0.05, { type: 'triangle', vol: 0.02, to: 600 });
   },
   hurt() {
     noiseHit(0.2, 0.35, 400, 'lowpass');
@@ -1086,6 +1090,19 @@ function drawEnemySprite(e) {
     g.globalAlpha = 0.10 + k * 0.25;
     g.fillStyle = '#ff3b4e';
     g.beginPath(); g.ellipse(e.x, e.y - 50 * s, 34 * s, 50 * s, 0, 0, TAU); g.fill();
+    g.restore();
+  }
+  if (e.kind === 'bomber' && e.state === 'fuse') {
+    const k = 1 - clamp(e.st / 0.85, 0, 1);
+    const r = (40 + 60 * k) * 1.1;
+    g.save();
+    g.globalAlpha = 0.10 + 0.20 * Math.abs(Math.sin(G.t * 18));
+    g.fillStyle = '#ff4d3d';
+    g.beginPath(); g.ellipse(e.x, e.y - 8, r, r * 0.38, 0, 0, TAU); g.fill();
+    g.globalAlpha = 0.5;
+    g.strokeStyle = 'rgba(255,120,90,0.8)';
+    g.lineWidth = 1.5;
+    g.beginPath(); g.ellipse(e.x, e.y - 8, r, r * 0.38, 0, 0, TAU); g.stroke();
     g.restore();
   }
   if (e.kind === 'archer' && e.state === 'wind') {
@@ -2391,6 +2408,21 @@ function updateEnemies(dt) {
     if (e.kind === 'oni') { updateOni(e, dt); continue; }
     if (e.kind === 'archer') { updateArcher(e, dt, d, dx, dy); continue; }
     if (e.kind === 'bomber') { updateBomber(e, dt, d, dx, dy); continue; }
+    if (e.kind === 'shield' && e.guard === 0) {
+      e.guardT = (e.guardT || 0) + dt;
+      if (e.guardT > 5.5) {
+        e.guardT = 0;
+        e.guard = 1;
+        ring(e.x, e.y - 30, 6, 46, '#ffd36e', 1.4, 0.25);
+        floatText('复 盾', e.x, e.y - 70, '#ffd36e', 13);
+      }
+    }
+    if (e.kind === 'shadow' && e.cd <= 0 && d > 80 && d < 420) {
+      e.kx += dx / d * 620;
+      e.ky += dy / d * 420;
+      e.cd = 2.4;
+      sparks(e.x, e.y - 30, 6, '#ff5f70', 160, Math.atan2(dy, dx), 1.2);
+    }
     if (e.state === 'chase') {
       e.face = dx >= 0 ? 1 : -1;
       if (d > 42) {
