@@ -334,8 +334,7 @@ canvas.addEventListener('pointerdown', (e) => {
   }
   if (G.mode === 'result' && G.endT > 0.6) {
     const r = shareRect();
-    const oy = PORTRAIT ? (H - 720) / 2 : 0;
-    if (p.x >= r.x && p.x <= r.x + r.w && p.y - oy >= r.y && p.y - oy <= r.y + r.h) { saveShareCard(); return; }
+    if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { saveShareCard(); return; }
   }
   if (G.mode === 'play' && (G.talent || G.upgrade || G.weaponPick)) {
     const rects = cardRects();
@@ -4459,7 +4458,9 @@ function drawPause() {
 }
 
 function shareRect() {
-  return { x: W / 2 - 130, y: 646, w: 260, h: 38 };
+  const w = PORTRAIT ? 320 : 300;
+  const h = PORTRAIT ? 56 : 50;
+  return { x: W / 2 - w / 2, y: PORTRAIT ? 1010 : 588, w, h };
 }
 
 function roundRectOn(ctx, x, y, w, h, r) {
@@ -4596,44 +4597,69 @@ function saveShareCard() {
 
 function drawResult() {
   const a = clamp(G.endT * 1.5, 0, 1);
+  const win = G.victory;
   g.save();
-  g.globalAlpha = a * 0.92;
-  g.fillStyle = '#05040a';
-  g.fillRect(0, 0, W, H);
+  const bg = g.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, 'rgba(8,4,8,0.96)');
+  bg.addColorStop(0.5, 'rgba(14,6,10,0.94)');
+  bg.addColorStop(1, 'rgba(3,3,6,0.98)');
   g.globalAlpha = a;
-  if (PORTRAIT) g.translate(0, (H - 720) / 2);
+  g.fillStyle = bg;
+  g.fillRect(0, 0, W, H);
   g.textAlign = 'center';
 
-  const win = G.victory;
-  g.font = `700 46px ${F_SERIF}`;
+  const titleY = PORTRAIT ? 236 : 118;
+  g.globalAlpha = a * Math.min(1, G.endT * 2);
+  g.font = `700 ${PORTRAIT ? 54 : 46}px ${F_SERIF}`;
   g.letterSpacing = '14px';
   g.fillStyle = '#f0eef5';
   g.shadowColor = 'rgba(255,60,80,0.8)';
   g.shadowBlur = 26;
-  g.fillText(win ? '斩 尽' : '力 竭', W / 2 + 7, 176);
-
+  g.fillText(win ? '斩 尽' : '力 竭', W / 2 + 7, titleY);
   g.shadowBlur = 0;
-  g.font = `400 11px ${F_SANS}`;
+  g.font = `400 12px ${F_SANS}`;
   g.letterSpacing = '6px';
   g.fillStyle = 'rgba(200,210,235,0.55)';
-  g.fillText(win ? 'VICTORY' : 'YOU FELL', W / 2, 206);
+  g.fillText(win ? 'VICTORY' : 'YOU FELL', W / 2, titleY + 30);
 
-  // 评级
+  // 评级印章（弹入）
   const rank = G.rank || calcRank();
-  g.font = `700 132px ${F_SERIF}`;
-  g.letterSpacing = '10px';
+  const rk = clamp((G.endT - 0.18) / 0.42, 0, 1);
+  const ease = 1 - Math.pow(1 - rk, 3);
+  const stampS = 0.55 + 0.45 * ease + Math.sin(rk * Math.PI) * 0.06;
+  const rankY = PORTRAIT ? 470 : 300;
+  const rankSize = PORTRAIT ? 190 : 150;
+  g.save();
+  g.globalAlpha = a * Math.min(1, rk * 2);
+  g.translate(W / 2, rankY);
+  g.rotate(-0.06);
+  g.scale(stampS, stampS);
+  // 印章框
+  const rw = rankSize * (rank.length >= 3 ? 2.3 : rank.length === 2 ? 1.7 : 1.3);
+  g.strokeStyle = 'rgba(255,70,90,0.55)';
+  g.lineWidth = 3;
+  roundRect(-rw / 2, -rankSize * 0.56, rw, rankSize * 1.12, 10);
+  g.stroke();
+  g.strokeStyle = 'rgba(255,70,90,0.22)';
+  g.lineWidth = 1;
+  roundRect(-rw / 2 + 6, -rankSize * 0.52, rw - 12, rankSize * 1.04, 8);
+  g.stroke();
+  g.font = `700 ${rankSize}px ${F_SERIF}`;
+  g.letterSpacing = '8px';
   g.fillStyle = RATE_COLOR[rank];
   g.shadowColor = RATE_COLOR[rank];
   g.shadowBlur = 40;
-  g.fillText(rank, W / 2, 360);
+  g.fillText(rank, 0, rankSize * 0.34);
   g.shadowBlur = 0;
+  g.restore();
 
+  g.globalAlpha = a;
   g.font = `400 12px ${F_SANS}`;
   g.letterSpacing = '5px';
   g.fillStyle = 'rgba(200,210,235,0.55)';
-  g.fillText('R A N K', W / 2, 392);
+  g.fillText('R A N K   ·   评 定', W / 2, rankY + (PORTRAIT ? 150 : 118));
 
-  // 数据
+  // 数据面板
   const mm = Math.floor(G.runT / 60), ss = Math.floor(G.runT % 60);
   const stats = [
     ['用 时', `${mm}:${String(ss).padStart(2, '0')}`],
@@ -4641,39 +4667,54 @@ function drawResult() {
     ['最高连击', G.maxCombo],
     ['总分', G.score]
   ];
+  const panelY = PORTRAIT ? 700 : 400;
+  const panelH = PORTRAIT ? 280 : 196;
+  const panelW = PORTRAIT ? W - 140 : 520;
+  const px = W / 2 - panelW / 2;
+  g.fillStyle = 'rgba(20,16,28,0.55)';
+  roundRect(px, panelY, panelW, panelH, 12); g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.08)';
+  g.lineWidth = 1;
+  roundRect(px, panelY, panelW, panelH, 12); g.stroke();
+  const rowH = panelH / 4;
   stats.forEach((s, i) => {
-    const y = 456 + i * 40;
-    g.font = `400 12px ${F_SANS}`;
+    const y = panelY + rowH * (i + 0.68);
+    if (i > 0) {
+      g.fillStyle = 'rgba(255,255,255,0.05)';
+      g.fillRect(px + 20, panelY + rowH * i, panelW - 40, 1);
+    }
+    g.textAlign = 'left';
+    g.font = `400 14px ${F_SANS}`;
     g.letterSpacing = '4px';
-    g.fillStyle = 'rgba(190,205,230,0.55)';
-    g.fillText(s[0], W / 2 - 140, y);
+    g.fillStyle = 'rgba(190,205,230,0.6)';
+    g.fillText(s[0], px + 26, y);
     g.textAlign = 'right';
-    g.font = `700 26px ${F_NUM}`;
+    g.font = `700 ${PORTRAIT ? 30 : 26}px ${F_NUM}`;
     g.letterSpacing = '2px';
     g.fillStyle = '#eef2fb';
-    g.fillText(String(s[1]), W / 2 + 140, y);
-    g.textAlign = 'center';
+    g.fillText(String(s[1]), px + panelW - 26, y);
   });
+  g.textAlign = 'center';
 
-  // 分享卡按钮
+  // 分享按钮
   const sr = shareRect();
   g.globalAlpha = a;
-  g.fillStyle = 'rgba(255,90,110,0.16)';
-  roundRect(sr.x, sr.y, sr.w, sr.h, 20); g.fill();
+  g.fillStyle = 'rgba(255,90,110,0.18)';
+  roundRect(sr.x, sr.y, sr.w, sr.h, 24); g.fill();
   g.strokeStyle = 'rgba(255,120,140,0.7)';
   g.lineWidth = 1.5;
-  roundRect(sr.x, sr.y, sr.w, sr.h, 20); g.stroke();
-  g.font = `600 13px ${F_SANS}`;
-  g.letterSpacing = '4px';
+  roundRect(sr.x, sr.y, sr.w, sr.h, 24); g.stroke();
+  g.font = `600 15px ${F_SANS}`;
+  g.letterSpacing = '5px';
   g.fillStyle = '#ffe8eb';
-  g.fillText('保 存 分 享 图', W / 2, sr.y + 26);
+  g.fillText('保 存 分 享 图', W / 2, sr.y + sr.h / 2 + 5);
 
-  const pulse = 0.8 + Math.sin(G.endT * 3) * 0.2;
+  const pulse = 0.75 + Math.sin(G.endT * 3) * 0.25;
   g.globalAlpha = a * pulse;
-  g.font = `400 11px ${F_SANS}`;
+  g.font = `400 13px ${F_SANS}`;
   g.letterSpacing = '5px';
   g.fillStyle = 'rgba(232,242,255,0.7)';
-  g.fillText('R 再来一次   ·   S 保存', W / 2, 706);
+  g.fillText('R 再来一次   ·   S 保存', W / 2, sr.y + sr.h + 44);
   g.restore();
 }
 
