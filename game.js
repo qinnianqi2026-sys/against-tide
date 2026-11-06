@@ -672,7 +672,67 @@ backEdge.width = WORLD_W; backEdge.height = 130;
   }
 }
 
+// 飘火星（屏幕空间）
+const embers = [];
+function resetEmber(e) {
+  e.x = Math.random() * W;
+  e.y = H * 0.5 + Math.random() * H * 0.55;
+  e.vx = rnd(-8, 8);
+  e.vy = -rnd(6, 22);
+  e.life = rnd(2.5, 6);
+  e.max = e.life;
+  e.r = rnd(0.8, 2.2);
+}
+for (let i = 0; i < 46; i++) {
+  const e = {};
+  resetEmber(e);
+  e.life = Math.random() * e.max;
+  embers.push(e);
+}
+function updateEmbers(dt) {
+  for (const e of embers) {
+    e.x += e.vx * dt + Math.sin(G.t * 1.7 + e.r * 9) * 6 * dt;
+    e.y += e.vy * dt;
+    e.life -= dt;
+    if (e.life <= 0 || e.y < H * 0.2) resetEmber(e);
+  }
+}
+function drawEmbers() {
+  g.save();
+  g.globalCompositeOperation = 'lighter';
+  for (const e of embers) {
+    const a = Math.min(1, e.life / 1.2) * 0.55;
+    g.fillStyle = `rgba(255,150,70,${a})`;
+    g.beginPath(); g.arc(e.x, e.y, e.r, 0, TAU); g.fill();
+    g.fillStyle = `rgba(255,220,150,${a * 0.6})`;
+    g.beginPath(); g.arc(e.x, e.y, e.r * 0.45, 0, TAU); g.fill();
+  }
+  g.restore();
+}
+
 // 前景草丛（屏幕空间，增加纵深）
+const fgGrass2 = document.createElement('canvas');
+fgGrass2.width = 1280; fgGrass2.height = 130;
+{
+  const b = fgGrass2.getContext('2d');
+  for (let i = 0; i < 70; i++) {
+    const x = Math.random() * 1280;
+    const h = 40 + Math.random() * 80;
+    const lean = (Math.random() - 0.5) * 22;
+    b.strokeStyle = `rgba(6,7,9,${0.75 + Math.random() * 0.25})`;
+    b.lineWidth = 1.5 + Math.random() * 2.5;
+    b.beginPath(); b.moveTo(x, 130);
+    b.quadraticCurveTo(x + lean * 0.3, 130 - h * 0.55, x + lean, 130 - h);
+    b.stroke();
+  }
+  for (let i = 0; i < 14; i++) {
+    const x = Math.random() * 1280, r = 8 + Math.random() * 20;
+    b.fillStyle = 'rgba(5,6,8,0.9)';
+    b.beginPath(); b.ellipse(x, 126, r, r * 0.4, 0, 0, TAU); b.fill();
+  }
+}
+
+
 const fgGrass = document.createElement('canvas');
 fgGrass.width = 1280; fgGrass.height = 150;
 {
@@ -2472,6 +2532,7 @@ function update(dt) {
   G.kickY -= G.kickY * Math.min(1, 12 * dt);
   updateFX(dt);
   if (G.execT > 0) G.execT = Math.max(0, G.execT - dt);
+  updateEmbers(dt);
   updateWaves(dt);
   updateWeather(dt);
   G.redMix = lerp(G.redMix, (G.bloodMoon && G.mode !== 'title') ? 1 : 0, 1 - Math.exp(-1.6 * dt));
@@ -3585,7 +3646,12 @@ function render() {
   }
 
   if (G.mode === 'title') { drawTitle(); return; }
-  if (G.mode === 'play') { g.drawImage(fgGrass, 0, H - 190); drawHUD(); }
+  if (G.mode === 'play') {
+    drawEmbers();
+    g.drawImage(fgGrass, 0, H - 190);
+    g.drawImage(fgGrass2, 0, H - 120);
+    drawHUD();
+  }
   if (IS_TOUCH && G.mode === 'play') drawTouchUI();
   if (G.cutin) drawCutin();
   if (G.fatal) {
